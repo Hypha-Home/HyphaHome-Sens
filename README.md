@@ -23,6 +23,9 @@ Im Home-Assistant kann man sich dann vieles ausdenken:
 * Einen Alarm auslösen wenn die Luftqualität schlecht ist und es mal wieder zeit wäre zu lüften.
 * ...
 
+## Anleitungen
+Wie ihr den Sensor baut, was ihr benötigt und wie ihr die Firmware auf den ESP flashen könnt, findet [hier](docs/onboarding/README.md)
+
 ## Aktuell umgesetzt
 Aktuell befindet sich das Projekt im Prototypstadium. Die Software funktioniert schon sehr zuverlässig. Die Platine hat aber noch viele Mängel. Hier wird es eine neue Revision geben. Auch das Gehäuse ist noch sehr rudimentär. 
 > Vor allem beim Platinen- und Gehäusedesign würde ich mich über unterstützung freuen! 
