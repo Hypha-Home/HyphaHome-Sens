@@ -1,0 +1,278 @@
+<!-- sensor-ld2410-debug.html — Entwicklermodus des LD2410: Signalenergie, Schwelle und Ausloeser je Zone.
+     Route: GET /sensors/ld2410/debug
+
+     Jede Abfrage von GET /api/ld2410/debug schaltet den Engineering-Modus des Sensors ein bzw.
+     haelt ihn am Laufen; bleibt die Seite weg, faellt er nach wenigen Sekunden von selbst zurueck.
+     Die Seite rechnet fast nichts selbst: Schwelle, Hoechstwert und "zuletzt ausgeloest" kommen
+     vom Geraet. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- I18N_LOADER: Bei einer anderen Sprache als Deutsch das Woerterbuch vor dem Zeichnen laden
+         und den Inhalt bis zum Ersetzen der Texte verbergen. Die Liste der Sprachen steht hier
+         und in nichts sonst; eine neue Sprache braucht lang-xx.js und einen Eintrag hier. -->
+    <script>(function(){var l='de';try{l=localStorage.getItem('hyphahome-sens.lang')||(navigator.language||'de').slice(0,2).toLowerCase();}catch(e){}
+    if(['en'].indexOf(l)>=0){document.documentElement.className+=' i18n-wait';document.write('<script src="'+(location.protocol==='file:'?'':'/')+'js/lang-'+l+'.js"><\/script>');}})();</script>
+    <style>.i18n-wait body{visibility:hidden}</style>
+    <title data-t="t.hypha_home_sens_ld2410_entwicklermodus">Hypha Home - Sens &ndash; LD2410 &ndash; Entwicklermodus</title>
+    <script>(function(){var t=null;try{t=localStorage.getItem('hyphahome-sens.theme');}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();</script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="images/logo-dunkel.svg">
+    <link rel="icon" type="image/svg+xml" href="images/logo-hell.svg" media="(prefers-color-scheme: dark)">
+    <style>
+        .zones { display: grid; grid-template-columns: minmax(70px, auto) 1fr 1fr; gap: 10px 16px; align-items: center }
+        .zones .zone-label { font-size: 13px }
+        .zones .zone-label small { color: var(--header-sub-color) }
+        .zones .zone-label .target { display: block; margin-top: 4px }
+        .zones .grid-head { font-size: 12px; color: var(--header-sub-color); text-transform: uppercase; letter-spacing: .04em }
+        .zone-cell { min-width: 0 }
+        .energy { position: relative; height: 14px; border-radius: 3px; background: #222 }
+        .energy > i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 3px; background: #4b8bd8; transition: width .15s }
+        .energy.over > i { background: #ef4444 }
+        .energy > .thr, .energy > .peak { position: absolute; top: -3px; bottom: -3px; width: 2px }
+        .energy > .thr { background: var(--primary-color) }
+        .energy > .peak { background: #fff; opacity: .7 }
+        .zone-info { font-size: 12px; color: var(--header-sub-color); margin-top: 5px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap }
+        .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: var(--header-sub-color); margin: 8px 0 14px }
+        .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: -1px }
+        .legend .l-energy::before { background: #4b8bd8 }
+        .legend .l-over::before { background: #ef4444 }
+        .legend .l-thr::before { background: var(--primary-color); width: 3px }
+        .legend .l-peak::before { background: #fff; opacity: .7; width: 3px }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <nav class="sidebar">
+        <div class="brand">
+            <span class="brand-logo"><img class="logo-for-light" src="images/logo-dunkel.svg" alt="Hypha-Home"><img class="logo-for-dark" src="images/logo-hell.svg" alt=""></span>
+            <div>
+                <div class="brand-title">Hypha Home - Sens</div>
+                <div class="brand-sub">by EideardVMR</div>
+            </div>
+        </div>
+        <ul class="nav">
+            <li><a href="../../"><span data-t="nav.home">Startseite</span></a></li>
+            <li><a href="../../connections"><span data-t="nav.connections">Verbindungen</span></a></li>
+            <li><a href="../../sensors" class="active"><span data-t="nav.sensors">Sensoren</span></a></li>
+            <li><a href="../../control"><span data-t="nav.control">Steuerung</span></a></li>
+            <li><a href="../../settings"><span data-t="nav.settings">Einstellungen</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a data-t="nav.logout" href="../../logout">Abmelden</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="page-head">
+            <div>
+                <h1 data-t="t.ld2410_entwicklermodus">LD2410 &ndash; Entwicklermodus</h1>
+                <p data-t="t.signalenergie_schwelle_und_ausloeser_je_zone" class="sub">Signalenergie, Schwelle und Ausl&ouml;ser je Zone</p>
+            </div>
+            <div class="page-head-actions"><a data-t="t.zurueck_zum_sensor" href="../../sensors/ld2410">Zur&uuml;ck zum Sensor</a>
+                <button type="button" class="theme-toggle" id="themeToggle" data-t-attr="title:t.design_umschalten;aria-label:t.design_umschalten" title="Design umschalten" aria-label="Design umschalten"></button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2 data-t="t.rohwerte_des_sensors">Rohwerte des Sensors</h2></div>
+            <p data-t="t.im_entwicklermodus_sendet_der_sensor_die_signalenergie" class="sub">Im Entwicklermodus sendet der Sensor die Signalenergie jeder Zone. Er ist nur
+            eingeschaltet, solange diese Seite offen ist. Die Werte hier sind <strong>roh</strong>:
+            Die Haltezeiten der Oberfl&auml;che wirken nicht.</p>
+
+            <div class="tile-rows">
+                <div class="row">
+                    <span data-t="common.status" class="row-title">Status</span>
+                    <span id="dbgState"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.anwesenheit" class="row-title">Anwesenheit</span>
+                    <span id="dbgPresence"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.ziel_bewegung" class="row-title">Ziel (Bewegung)</span>
+                    <span class="row-content" id="dbgMoving"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.ziel_stillstand" class="row-title">Ziel (Stillstand)</span>
+                    <span class="row-content" id="dbgStationary"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2 data-t="t.energie_je_zone">Energie je Zone</h2></div>
+            <p data-t="t.eine_zone_loest_aus_sobald_ihre_energie_die_schwelle_ueberschreitet" class="sub">Eine Zone l&ouml;st aus, sobald ihre Energie die Schwelle &uuml;berschreitet; dann ist
+            der Balken rot. Mit dem H&ouml;chstwert l&auml;sst sich eine Schwelle einstellen: Erst den Raum
+            ruhig lassen und den St&ouml;rpegel ablesen, dann durch den Raum gehen und den Wert bei Bewegung
+            ablesen. Die Schwelle liegt dazwischen.</p>
+
+            <div class="legend">
+                <span data-t="t.energie" class="l-energy">Energie</span>
+                <span data-t="t.ueber_der_schwelle" class="l-over">&Uuml;ber der Schwelle</span>
+                <span data-t="t.schwelle" class="l-thr">Schwelle</span>
+                <span data-t="t.hoechstwert" class="l-peak">H&ouml;chstwert</span>
+            </div>
+
+            <div class="zones" id="zones">
+                <div data-t="t.zone" class="grid-head">Zone</div>
+                <div data-t="t.bewegung" class="grid-head">Bewegung</div>
+                <div data-t="t.stillstand" class="grid-head">Stillstand</div>
+            </div>
+
+            <div class="actions">
+                <button data-t="t.hoechstwerte_zuruecksetzen" class="btn-ghost" type="button" id="resetPeaks">H&ouml;chstwerte zur&uuml;cksetzen</button>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script src="js/lang-de.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    /* Jede Zone des LD2410 deckt rund 75 cm ab, Zone 0 beginnt am Sensor. */
+    const GATE_DEPTH_CM = 75;
+    const NBSP = ' ';
+    const DASH = '–';
+
+    const zones = document.getElementById('zones');
+    const stateCell = document.getElementById('dbgState');
+    const presenceCell = document.getElementById('dbgPresence');
+    const movingCell = document.getElementById('dbgMoving');
+    const stationaryCell = document.getElementById('dbgStationary');
+    const resetButton = document.getElementById('resetPeaks');
+
+    let rows = [];   /* je Zone: Verweise auf die Elemente, damit eine Abfrage nur Werte setzt */
+
+    function badge(text, kind) {
+        return '<span class="badge ' + kind + '">' + text + '</span>';
+    }
+
+    /* Deutsche Schreibweise mit Komma: 0,75 m statt 0.75 m. */
+    function formatDistance(gate) {
+        return (gate * GATE_DEPTH_CM / 100).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + NBSP + 'm';
+    }
+
+    function makeBar() {
+        const bar = document.createElement('div');
+        bar.className = 'energy';
+        bar.innerHTML = '<i></i><span class="thr"></span><span class="peak"></span>';
+        const info = document.createElement('div');
+        info.className = 'zone-info';
+        info.innerHTML = '<span class="value"></span><span class="trigger"></span>';
+        const cell = document.createElement('div');
+        cell.className = 'zone-cell';
+        cell.appendChild(bar);
+        cell.appendChild(info);
+        return { cell: cell, bar: bar, fill: bar.children[0], thr: bar.children[1], peak: bar.children[2],
+                 value: info.children[0], trigger: info.children[1] };
+    }
+
+    function buildRows(count) {
+        rows.forEach(function (row) { row.label.remove(); row.moving.cell.remove(); row.stationary.cell.remove(); });
+        rows = [];
+        for (let index = 0; index < count; index++) {
+            const label = document.createElement('div');
+            label.className = 'zone-label';
+            label.innerHTML = I18n.t('js.ld2410.zone_label', { index: index, distance: formatDistance(index) })
+                            + '<span class="target"></span>';
+            const row = { label: label, target: label.lastChild, moving: makeBar(), stationary: makeBar() };
+            zones.appendChild(label);
+            zones.appendChild(row.moving.cell);
+            zones.appendChild(row.stationary.cell);
+            rows.push(row);
+        }
+    }
+
+    function formatAgo(ms) {
+        if (ms === null || ms === undefined) return I18n.t('js.ld2410debug.never');
+        if (ms < 1000) return I18n.t('js.ld2410debug.just_now');
+        const seconds = Math.round(ms / 1000);
+        if (seconds < 120) return I18n.t('js.ld2410debug.seconds_ago', { n: seconds });
+        return I18n.t('js.ld2410debug.minutes_ago', { n: Math.round(seconds / 60) });
+    }
+
+    function setBar(part, energy, threshold, peak, agoMs) {
+        part.fill.style.width = Math.min(energy, 100) + '%';
+        part.thr.style.left = Math.min(threshold, 100) + '%';
+        part.peak.style.left = Math.min(peak, 100) + '%';
+        part.bar.classList.toggle('over', energy > threshold);
+        part.value.textContent = I18n.t('js.ld2410debug.value', { energy: energy, threshold: threshold, peak: peak });
+        part.trigger.textContent = formatAgo(agoMs);
+    }
+
+    function target(found, distance, energy) {
+        return found ? distance + NBSP + 'cm / ' + energy + NBSP + '%' : DASH;
+    }
+
+    function render(data) {
+        if (!data.enabled) {
+            stateCell.innerHTML = badge(I18n.t('status.disabled'), 'muted');
+        } else if (!data.connected) {
+            stateCell.innerHTML = badge(I18n.t('status.missing'), 'err');
+        } else if (!data.active) {
+            stateCell.innerHTML = badge(I18n.t('js.ld2410debug.starting'), 'warn');
+        } else {
+            stateCell.innerHTML = badge(I18n.t('js.ld2410debug.active'), 'ok');
+        }
+
+        const live = data.enabled && data.connected;
+        const word = data.presence ? 'Ja' : 'Nein';
+        presenceCell.innerHTML = live ? badge(I18n.t('bool.' + word, null, word), data.presence ? 'ok' : 'muted') : DASH;
+        movingCell.textContent = live ? target(data.movingTarget, data.movingDistance, data.movingEnergy) : DASH;
+        stationaryCell.textContent = live ? target(data.stationaryTarget, data.stationaryDistance, data.stationaryEnergy) : DASH;
+
+        const gates = data.gates || [];
+        if (gates.length !== rows.length) buildRows(gates.length);
+
+        /* In welcher Zone das erkannte Ziel liegt, folgt aus seiner Entfernung. */
+        const movingGate = data.movingTarget ? Math.floor(data.movingDistance / GATE_DEPTH_CM) : -1;
+        const stationaryGate = data.stationaryTarget ? Math.floor(data.stationaryDistance / GATE_DEPTH_CM) : -1;
+
+        gates.forEach(function (gate, index) {
+            const row = rows[index];
+            setBar(row.moving, gate.moving, gate.movingThreshold, gate.movingPeak, gate.movingTriggeredAgoMs);
+            setBar(row.stationary, gate.stationary, gate.stationaryThreshold, gate.stationaryPeak, gate.stationaryTriggeredAgoMs);
+
+            let marks = '';
+            if (index === movingGate) marks += badge(I18n.t('js.ld2410debug.target_moving'), 'warn') + ' ';
+            if (index === stationaryGate) marks += badge(I18n.t('js.ld2410debug.target_stationary'), 'warn');
+            row.target.innerHTML = marks;
+        });
+    }
+
+    resetButton.addEventListener('click', async function () {
+        try {
+            await Api.request('/api/ld2410/debug', { method: 'POST', body: JSON.stringify({ action: 'reset' }) });
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            Toast.error(error.message);
+        }
+    });
+
+    /* Beim Verlassen den Entwicklermodus gleich abschalten, statt auf den Ablauf zu warten.
+     * Schlaegt das fehl, faengt der Ablauf der Anforderung im Geraet es auf. */
+    window.addEventListener('pagehide', function () {
+        try {
+            Api.request('/api/ld2410/debug', { method: 'POST', body: JSON.stringify({ action: 'stop' }), keepalive: true })
+                .catch(function () {});
+        } catch (e) { /* siehe oben */ }
+    });
+
+    Api.poll(function () {
+        return Api.request('/api/ld2410/debug').then(render);
+    });
+})();
+</script>
+</body>
+</html>

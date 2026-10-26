@@ -1,0 +1,349 @@
+<!-- sensor-ld2410.html — Messwerte, Haltezeiten und Gate-Empfindlichkeiten des Radarsensors.
+     Route: GET /sensors/ld2410
+
+     Die Messwerte oben laufen über dieselben data-Attribute wie sensors.html.
+     Die Gate-Tabelle wird aus GET /api/config aufgebaut — die Zahl der Zonen gibt also das
+     Gerät vor (LD2410_GATE_COUNT), nicht dieses HTML.
+
+     Gespeichert wird mit POST /api/config, ohne die Seite neu zu laden. Gesendet wird nur der
+     Teilbaum sensors.ld2410.gates beziehungsweise sensors.ld2410.{moving,stationary,presence}Hold; alles andere in
+     der Konfiguration bleibt unberührt. Die Obergrenze der Haltezeit kommt aus limits. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- I18N_LOADER: Bei einer anderen Sprache als Deutsch das Woerterbuch vor dem Zeichnen laden
+         und den Inhalt bis zum Ersetzen der Texte verbergen. Die Liste der Sprachen steht hier
+         und in nichts sonst; eine neue Sprache braucht lang-xx.js und einen Eintrag hier. -->
+    <script>(function(){var l='de';try{l=localStorage.getItem('hyphahome-sens.lang')||(navigator.language||'de').slice(0,2).toLowerCase();}catch(e){}
+    if(['en'].indexOf(l)>=0){document.documentElement.className+=' i18n-wait';document.write('<script src="'+(location.protocol==='file:'?'':'/')+'js/lang-'+l+'.js"><\/script>');}})();</script>
+    <style>.i18n-wait body{visibility:hidden}</style>
+    <title data-t="t.hypha_home_sens_sensor_ld2410">Hypha Home - Sens &ndash; Sensor &ndash; LD2410</title>
+    <script>(function(){var t=null;try{t=localStorage.getItem('hyphahome-sens.theme');}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();</script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="images/logo-dunkel.svg">
+    <link rel="icon" type="image/svg+xml" href="images/logo-hell.svg" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<div class="app">
+
+    <nav class="sidebar">
+        <div class="brand">
+            <span class="brand-logo"><img class="logo-for-light" src="images/logo-dunkel.svg" alt="Hypha-Home"><img class="logo-for-dark" src="images/logo-hell.svg" alt=""></span>
+            <div>
+                <div class="brand-title">Hypha Home - Sens</div>
+                <div class="brand-sub">by EideardVMR</div>
+            </div>
+        </div>
+        <ul class="nav">
+            <li><a href="../"><span data-t="nav.home">Startseite</span></a></li>
+            <li><a href="../connections"><span data-t="nav.connections">Verbindungen</span></a></li>
+            <li><a href="../sensors" class="active"><span data-t="nav.sensors">Sensoren</span></a></li>
+            <li><a href="../control"><span data-t="nav.control">Steuerung</span></a></li>
+            <li><a href="../settings"><span data-t="nav.settings">Einstellungen</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a data-t="nav.logout" href="../logout">Abmelden</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="page-head">
+            <div>
+                <h1 data-t="t.sensor_ld2410">Sensor &ndash; LD2410</h1>
+                <p data-t="t.konfiguration_des_radar_sensors" class="sub">Konfiguration des Radar-Sensors</p>
+            </div>
+            <button type="button" class="theme-toggle" id="themeToggle" data-t-attr="title:t.design_umschalten;aria-label:t.design_umschalten" title="Design umschalten" aria-label="Design umschalten"></button>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2 data-t="common.measurements">Messwerte</h2></div>
+
+            <div class="tile-rows">
+                <div class="row">
+                    <span data-t="common.status" class="row-title">Status</span>
+                    <span data-status="ld2410"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.anwesenheit" class="row-title">Anwesenheit</span>
+                    <span data-field="ld2410.presence" data-bool="Ja|Nein"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.bewegung_erkannt" class="row-title">Bewegung erkannt</span>
+                    <span data-field="ld2410.movingTarget" data-bool="Ja|Nein"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.entfernung_bewegung" class="row-title">Entfernung (Bewegung)</span>
+                    <span class="row-content" data-field="ld2410.movingDistance" data-unit="cm"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.energie_bewegung" class="row-title">Energie (Bewegung)</span>
+                    <span class="row-content" data-field="ld2410.movingEnergy" data-unit="%"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.stillstand_erkannt" class="row-title">Stillstand erkannt</span>
+                    <span data-field="ld2410.stationaryTarget" data-bool="Ja|Nein"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.entfernung_stillstand" class="row-title">Entfernung (Stillstand)</span>
+                    <span class="row-content" data-field="ld2410.stationaryDistance" data-unit="cm"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.energie_stillstand" class="row-title">Energie (Stillstand)</span>
+                    <span class="row-content" data-field="ld2410.stationaryEnergy" data-unit="%"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2 data-t="t.entwicklermodus">Entwicklermodus</h2></div>
+            <p data-t="t.zeigt_die_signalenergie_und_die_schwelle_jeder_zone_live" class="sub">Zeigt live die Signalenergie und die Schwelle jeder Zone und welche
+            Zone zuletzt ausgel&ouml;st hat. Hilfreich, um die Empfindlichkeiten einzustellen.</p>
+            <a class="btn" href="../sensors/ld2410/debug" data-t="t.entwicklermodus_oeffnen">Entwicklermodus &ouml;ffnen</a>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2 data-t="common.operation">Betrieb</h2></div>
+            <p data-t="common.enable_info" class="sub">Ein ausgeschalteter Sensor wird weder gelesen noch gemeldet: Die Oberfl&auml;che
+            zeigt ihn als deaktiviert, Home Assistant als nicht verf&uuml;gbar. Die &Auml;nderung gilt
+            sofort, ein Neustart ist nicht n&ouml;tig.</p>
+
+            <form id="enableForm">
+                <label class="check"><input type="checkbox" id="enableBox" disabled> <span data-t="common.sensor_enabled">Sensor eingeschaltet</span></label>
+                <button data-t="common.save" class="btn" type="submit" id="enableSave" disabled>Speichern</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2 data-t="t.haltezeiten">Haltezeiten</h2></div>
+            <p data-t="t.der_sensor_meldet_bewegung_stillstand_und" class="sub">Der Sensor meldet Bewegung, Stillstand und Anwesenheit nur im Augenblick
+            der Erkennung und schaltet dabei schnell hin und her. Nach der letzten Erkennung bleibt
+            die jeweilige Meldung so viele Sekunden bestehen. <strong>0</strong> schaltet das
+            Halten ab.</p>
+
+            <form id="holdForm">
+                <label data-t="t.bewegung_in_sekunden" for="holdMoving">Bewegung in Sekunden</label>
+                <input type="number" id="holdMoving" data-key="movingHold" min="0" max="600" step="1" disabled>
+
+                <label data-t="t.stillstand_in_sekunden" for="holdStationary">Stillstand in Sekunden</label>
+                <input type="number" id="holdStationary" data-key="stationaryHold" min="0" max="600" step="1" disabled>
+
+                <label data-t="t.anwesenheit_in_sekunden" for="holdPresence">Anwesenheit in Sekunden</label>
+                <input type="number" id="holdPresence" data-key="presenceHold" min="0" max="600" step="1" disabled>
+
+                <button data-t="common.save" class="btn" type="submit" id="saveHold" disabled>Speichern</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2 data-t="t.empfindlichkeit_je_zone">Empfindlichkeit je Zone</h2></div>
+            <p data-t="t.ab_welcher_signalstaerke_gilt_etwas_als" class="sub">Ab welcher Signalst&auml;rke gilt etwas als Bewegung oder als ruhende
+            Person? Ein <strong>hoher</strong> Wert macht die Zone unempfindlich, ein niedriger
+            empfindlich. Zul&auml;ssig sind 0 bis 100. Ein <strong>leeres</strong> Feld &auml;ndert
+            den Wert im Sensor nicht.</p>
+
+            <form id="gateForm">
+                <div class="field-grid gate-grid" id="gateGrid">
+                    <div data-t="t.zone" class="grid-head">Zone</div>
+                    <div data-t="t.bewegung" class="grid-head">Bewegung</div>
+                    <div data-t="t.stillstand" class="grid-head">Stillstand</div>
+                </div>
+
+                <button data-t="common.save" class="btn" type="submit" id="save" disabled>Speichern</button>
+            </form>
+        </div>
+
+    </main>
+</div>
+
+<script src="js/lang-de.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    /* Jede Zone des LD2410 deckt rund 75 cm ab, Zone 0 beginnt am Sensor. Die Entfernung
+     * daneben zu schreiben macht die Tabelle erst benutzbar — "Gate 5" sagt niemandem etwas,
+     * "3,75 m" schon. */
+    const GATE_DEPTH_M = 0.75;
+
+    const grid = document.getElementById('gateGrid');
+    const form = document.getElementById('gateForm');
+    const save = document.getElementById('save');
+    const holdForm = document.getElementById('holdForm');
+    const holdInputs = Array.from(holdForm.querySelectorAll('input'));
+    const saveHold = document.getElementById('saveHold');
+
+    const view = SensorView.create();
+    const enable = SensorEnable.bind('ld2410');
+
+    /* Deutsche Schreibweise mit Komma: 0,75 m statt 0.75 m. */
+    function formatDistance(gate) {
+        return (gate * GATE_DEPTH_M).toFixed(2).replace(/\.?0+$/, '').replace('.', ',')
+             + SensorView.NBSP + 'm';
+    }
+
+    function makeInput(gate, field, value) {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.max = '100';
+        input.step = '1';
+        input.dataset.gate = String(gate);
+        input.dataset.key = field;
+        /* Ein nicht gesetzter Wert fehlt in der Antwort — das Feld bleibt dann leer, und der
+         * Platzhalter sagt, was das bedeutet. */
+        input.value = (value === undefined || value === null) ? '' : String(value);
+        input.placeholder = 'unver\u00e4ndert';
+        input.addEventListener('input', function () { input.classList.remove('invalid'); });
+        return input;
+    }
+
+    /* Baut die Zeilen aus der Konfiguration auf. Die Zahl der Zonen kommt damit vom Gerät. */
+    function buildGrid(gates) {
+        gates.forEach(function (gate, index) {
+            const label = document.createElement('div');
+            label.className = 'grid-label';
+            label.innerHTML = I18n.t('js.ld2410.zone_label', { index: index, distance: formatDistance(index) });
+            grid.appendChild(label);
+
+            const moving = document.createElement('div');
+            moving.appendChild(makeInput(index, 'moving', gate.moving));
+            grid.appendChild(moving);
+
+            const stationary = document.createElement('div');
+            stationary.appendChild(makeInput(index, 'stationary', gate.stationary));
+            grid.appendChild(stationary);
+        });
+    }
+
+    /* Liest die Felder aus und baut daraus den Teilbaum für POST /api/config.
+     *
+     * Leere Felder werden weggelassen, nicht als 0 geschickt: Die 0 ist ein gültiger Wert und
+     * schaltet die Stillstandserkennung einer Zone ab. Fehlt der Schlüssel, lässt das Gerät
+     * den Wert im Sensor stehen.
+     *
+     * @returns Das gates-Array, oder null wenn ein Feld unzulässig ist */
+    function collectGates() {
+        const gates = [];
+        let invalid = null;
+
+        grid.querySelectorAll('input').forEach(function (input) {
+            const index = Number(input.dataset.gate);
+            if (!gates[index]) gates[index] = {};
+
+            const raw = input.value.trim();
+            if (raw === '') return;
+
+            const value = Number(raw);
+            if (!Number.isInteger(value) || value < 0 || value > 100) {
+                input.classList.add('invalid');
+                if (invalid === null) invalid = index;
+                return;
+            }
+            gates[index][input.dataset.key] = value;
+        });
+
+        if (invalid !== null) {
+            Toast.error(I18n.t('js.ld2410.zone_invalid', { zone: invalid }));
+            return null;
+        }
+        return gates;
+    }
+
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const gates = collectGates();
+        if (gates === null) return;
+
+        save.disabled = true;
+        save.textContent = I18n.t('common.saving');
+
+        try {
+            await Api.request('/api/config', {
+                method: 'POST',
+                body: JSON.stringify({ sensors: { ld2410: { gates: gates } } })
+            });
+            Toast.ok(I18n.t('js.ld2410.gates_saved'));
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            Toast.error(I18n.t('common.save_failed', { message: error.message }));
+        }
+
+        save.disabled = false;
+        save.textContent = I18n.t('common.save');
+    });
+
+    holdForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const hold = {};
+        let valid = true;
+        holdInputs.forEach(function (input) {
+            const max = Number(input.max);
+            const raw = input.value.trim();
+            const value = Number(raw);
+            if (raw === '' || !Number.isInteger(value) || value < 0 || value > max) {
+                input.classList.add('invalid');
+                valid = false;
+                return;
+            }
+            hold[input.dataset.key] = value;
+        });
+        if (!valid) {
+            Toast.error(I18n.t('js.ld2410.hold_invalid', { max: holdInputs[0].max }));
+            return;
+        }
+
+        saveHold.disabled = true;
+        saveHold.textContent = I18n.t('common.saving');
+
+        try {
+            await Api.request('/api/config', {
+                method: 'POST',
+                body: JSON.stringify({ sensors: { ld2410: hold } })
+            });
+            Toast.ok(I18n.t('js.ld2410.hold_saved'));
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            Toast.error(I18n.t('common.save_failed', { message: error.message }));
+        }
+
+        saveHold.disabled = false;
+        saveHold.textContent = I18n.t('common.save');
+    });
+
+    holdInputs.forEach(function (input) {
+        input.addEventListener('input', function () { input.classList.remove('invalid'); });
+    });
+
+    Api.config().then(function (config) {
+        enable.load(config);
+        const ld2410 = config.sensors && config.sensors.ld2410;
+        holdInputs.forEach(function (input) {
+            if (config.limits && config.limits.ld2410MovingHoldMax !== undefined) {
+                input.max = String(config.limits.ld2410MovingHoldMax);
+            }
+            const value = ld2410 && ld2410[input.dataset.key];
+            input.value = (value === undefined || value === null) ? '' : String(value);
+            input.disabled = false;
+        });
+        saveHold.disabled = false;
+        buildGrid((ld2410 && ld2410.gates) || []);
+        save.disabled = false;
+    }).catch(function (error) {
+        if (error.unauthorized) { Api.toLogin(); return; }
+        Toast.error(I18n.t('error.CONFIG_LOAD_FAILED'));
+    });
+
+    Api.poll(function () {
+        return Api.sensors().then(view.render);
+    });
+})();
+</script>
+</body>
+</html>

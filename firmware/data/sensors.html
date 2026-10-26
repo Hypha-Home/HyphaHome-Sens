@@ -1,0 +1,308 @@
+<!-- sensors.html — alle Messwerte. Route: GET /sensors
+
+     Die Werte stehen nicht im HTML, sondern werden über data-Attribute eingesetzt:
+
+       data-field="sht41.temperature"   Pfad in der Antwort von GET /api/sensors
+       data-digits="1"                  Nachkommastellen
+       data-unit="°C"                   Einheit, wird mit schmalem Abstand angehängt
+       data-bool="Ja|Nein"              als Abzeichen statt als Text
+       data-good="normal"               Zustandsschluessel als Abzeichen, gruen bei Treffer,
+                                        sonst orange (mehrere durch Komma getrennt)
+       data-status="sht41"              dreistufiges Verbindungsabzeichen
+       data-points="sht41.temperatureCalibration"   Kalibrierpunkte aus /api/config
+
+     Eine zusätzliche Zeile braucht dadurch kein JavaScript, nur ein weiteres Element. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- I18N_LOADER: Bei einer anderen Sprache als Deutsch das Woerterbuch vor dem Zeichnen laden
+         und den Inhalt bis zum Ersetzen der Texte verbergen. Die Liste der Sprachen steht hier
+         und in nichts sonst; eine neue Sprache braucht lang-xx.js und einen Eintrag hier. -->
+    <script>(function(){var l='de';try{l=localStorage.getItem('hyphahome-sens.lang')||(navigator.language||'de').slice(0,2).toLowerCase();}catch(e){}
+    if(['en'].indexOf(l)>=0){document.documentElement.className+=' i18n-wait';document.write('<script src="'+(location.protocol==='file:'?'':'/')+'js/lang-'+l+'.js"><\/script>');}})();</script>
+    <style>.i18n-wait body{visibility:hidden}</style>
+    <title data-t="t.hypha_home_sens_sensoren">Hypha Home - Sens &ndash; Sensoren</title>
+    <script>(function(){var t=null;try{t=localStorage.getItem('hyphahome-sens.theme');}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();</script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="images/logo-dunkel.svg">
+    <link rel="icon" type="image/svg+xml" href="images/logo-hell.svg" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<div class="app">
+
+    <nav class="sidebar">
+        <div class="brand">
+            <span class="brand-logo"><img class="logo-for-light" src="images/logo-dunkel.svg" alt="Hypha-Home"><img class="logo-for-dark" src="images/logo-hell.svg" alt=""></span>
+            <div>
+                <div class="brand-title">Hypha Home - Sens</div>
+                <div class="brand-sub">by EideardVMR</div>
+            </div>
+        </div>
+        <ul class="nav">
+            <li><a href="./"><span data-t="nav.home">Startseite</span></a></li>
+            <li><a href="./connections"><span data-t="nav.connections">Verbindungen</span></a></li>
+            <li><a href="./sensors" class="active"><span data-t="nav.sensors">Sensoren</span></a></li>
+            <li><a href="./control"><span data-t="nav.control">Steuerung</span></a></li>
+            <li><a href="./settings"><span data-t="nav.settings">Einstellungen</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a data-t="nav.logout" href="./logout">Abmelden</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="page-head">
+            <div>
+                <h1 data-t="nav.sensors">Sensoren</h1>
+                <p data-t="t.liste_aller_nutzbaren_sensoren" class="sub" id="pollState">Liste aller nutzbaren Sensoren</p>
+            </div>
+            <button type="button" class="theme-toggle" id="themeToggle" data-t-attr="title:t.design_umschalten;aria-label:t.design_umschalten" title="Design umschalten" aria-label="Design umschalten"></button>
+        </div>
+
+        <div class="tiles">
+
+            <div class="tile">
+                <div data-t="t.licht_sensor">Licht-Sensor</div>
+                <p class="sub">BH1750</p>
+                <div class="tile-rows">
+                    <div class="row">
+                        <span data-t="common.status" class="row-title">Status</span>
+                        <span data-status="bh1750"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.helligkeit_roh" class="row-title">Helligkeit (Roh)</span>
+                        <span class="row-content" data-field="bh1750.lux" data-digits="1" data-unit="lx"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.helligkeit_korrigiert" class="row-title">Helligkeit (Korrigiert)</span>
+                        <span class="row-content" data-field="bh1750.luxCalibrated" data-digits="1" data-unit="lx"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.kalibrierung" class="row-title">Kalibrierung</span>
+                        <span class="row-content" data-points="bh1750.luxCalibration"></span>
+                    </div>
+                    <div class="row"><a data-t="t.konfigurieren" href="./sensors/bh1750">Konfigurieren</a></div>
+                </div>
+            </div>
+
+            <div class="tile">
+                <div data-t="t.klima_sensor">Klima-Sensor</div>
+                <p class="sub">SHT41</p>
+                <div class="tile-rows">
+                    <div class="row">
+                        <span data-t="common.status" class="row-title">Status</span>
+                        <span data-status="sht41"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.temperatur_roh" class="row-title">Temperatur (Roh)</span>
+                        <span class="row-content" data-field="sht41.temperature" data-digits="2" data-unit="&deg;C"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.temperatur_korrigiert" class="row-title">Temperatur (Korrigiert)</span>
+                        <span class="row-content" data-field="sht41.temperatureCalibrated" data-digits="2" data-unit="&deg;C"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.luftfeuchte_roh" class="row-title">Luftfeuchte (Roh)</span>
+                        <span class="row-content" data-field="sht41.humidity" data-digits="1" data-unit="%"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.luftfeuchte_korrigiert" class="row-title">Luftfeuchte (Korrigiert)</span>
+                        <span class="row-content" data-field="sht41.humidityCalibrated" data-digits="1" data-unit="%"></span>
+                    </div>
+                    <div class="row" data-visible-if="sht41.smoothing>1">
+                        <span data-t="t.temperatur_gemittelt" class="row-title">Temperatur (Gemittelt)</span>
+                        <span class="row-content" data-field="sht41.temperatureSmoothed" data-digits="2" data-unit="&deg;C"></span>
+                    </div>
+                    <div class="row" data-visible-if="sht41.smoothing>1">
+                        <span data-t="t.luftfeuchte_gemittelt" class="row-title">Luftfeuchte (Gemittelt)</span>
+                        <span class="row-content" data-field="sht41.humiditySmoothed" data-digits="1" data-unit="%"></span>
+                    </div>
+                    <div class="row" data-visible-if="sht41.smoothing>1">
+                        <span data-t="t.mittelwert_aus" class="row-title">Mittelwert aus</span>
+                        <span class="row-content" data-field="sht41.smoothing" data-unit="Messwerten"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.taupunkt" class="row-title">Taupunkt</span>
+                        <span class="row-content" data-field="sht41.dewPoint" data-digits="1" data-unit="&deg;C"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.kalibrierung" class="row-title">Kalibrierung</span>
+                        <span class="row-content" data-points="sht41.temperatureCalibration"></span>
+                    </div>
+                    <div class="row"><a data-t="t.konfigurieren" href="./sensors/sht41">Konfigurieren</a></div>
+                </div>
+            </div>
+
+            <div class="tile">
+                <div data-t="t.co2_sensor">CO2-Sensor</div>
+                <p class="sub">SCD40</p>
+                <div class="tile-rows">
+                    <div class="row">
+                        <span data-t="common.status" class="row-title">Status</span>
+                        <span data-status="scd40"></span>
+                    </div>
+                    <div class="row">
+                        <span class="row-title">CO2</span>
+                        <span class="row-content" data-field="scd40.co2" data-unit="ppm"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.bewertung" class="row-title">Bewertung</span>
+                        <span class="row-content" data-field="scd40.level" data-i18n="level"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="common.temperature" class="row-title">Temperatur</span>
+                        <span class="row-content" data-field="scd40.temperature" data-digits="1" data-unit="&deg;C"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="common.humidity" class="row-title">Luftfeuchte</span>
+                        <span class="row-content" data-field="scd40.humidity" data-digits="1" data-unit="%"></span>
+                    </div>
+                    <div class="row"><a data-t="t.konfigurieren" href="./sensors/scd40">Konfigurieren</a></div>
+                </div>
+            </div>
+
+            <div class="tile">
+                <div data-t="t.luftqualitaet_sensor">Luftqualit&auml;t-Sensor</div>
+                <p class="sub">ENS160</p>
+                <div class="tile-rows">
+                    <div class="row">
+                        <span data-t="t.status_ens160" class="row-title">Status ENS160</span>
+                        <span data-status="ens160"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.luftqualitaetsindex_aqi" class="row-title">Luftqualit&auml;tsindex (AQI)</span>
+                        <span class="row-content" data-field="ens160.aqi"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.bewertung" class="row-title">Bewertung</span>
+                        <span class="row-content" data-field="ens160.level" data-i18n="level"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.messbereitschaft" class="row-title">Messbereitschaft</span>
+                        <span data-field="ens160.validity" data-good="normal" data-i18n="validity"></span>
+                    </div>
+                    <div class="row">
+                        <span class="row-title">TVOC</span>
+                        <span class="row-content" data-field="ens160.tvoc" data-unit="ppb"></span>
+                    </div>
+                    <div class="row">
+                        <span class="row-title">eCO2</span>
+                        <span class="row-content" data-field="ens160.eco2" data-unit="ppm"></span>
+                    </div>
+                    <div class="row"><a data-t="t.konfigurieren" href="./sensors/ens160">Konfigurieren</a></div>
+                </div>
+            </div>
+            
+            <div class="tile">
+                <div data-t="t.temp_sensor_fuer_ens160">Temp.-Sensor für ENS160</div>
+                <p class="sub">AHT21</p>
+                <div class="tile-rows">
+                    <div class="row">
+                        <span data-t="t.status_aht21" class="row-title">Status AHT21</span>
+                        <span data-status="aht21"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="common.temperature" class="row-title">Temperatur</span>
+                        <span class="row-content" data-field="aht21.temperature" data-digits="1" data-unit="&deg;C"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="common.humidity" class="row-title">Luftfeuchte</span>
+                        <span class="row-content" data-field="aht21.humidity" data-digits="1" data-unit="%"></span>
+                    </div>
+                    <div class="row"><a data-t="t.konfigurieren" href="./sensors/aht21">Konfigurieren</a></div>
+                </div>
+            </div>
+
+            <div class="tile">
+                <div data-t="t.radar_sensor">Radar-Sensor</div>
+                <p class="sub">LD2410</p>
+                <div class="tile-rows">
+                    <div class="row">
+                        <span data-t="common.status" class="row-title">Status</span>
+                        <span data-status="ld2410"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.anwesenheit" class="row-title">Anwesenheit</span>
+                        <span data-field="ld2410.presence" data-bool="Ja|Nein"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.bewegung_erkannt" class="row-title">Bewegung erkannt</span>
+                        <span data-field="ld2410.movingTarget" data-bool="Ja|Nein"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.entfernung_bewegung" class="row-title">Entfernung (Bewegung)</span>
+                        <span class="row-content" data-field="ld2410.movingDistance" data-unit="cm"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.energie_bewegung" class="row-title">Energie (Bewegung)</span>
+                        <span class="row-content" data-field="ld2410.movingEnergy" data-unit="%"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.stillstand_erkannt" class="row-title">Stillstand erkannt</span>
+                        <span data-field="ld2410.stationaryTarget" data-bool="Ja|Nein"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.entfernung_stillstand" class="row-title">Entfernung (Stillstand)</span>
+                        <span class="row-content" data-field="ld2410.stationaryDistance" data-unit="cm"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.energie_stillstand" class="row-title">Energie (Stillstand)</span>
+                        <span class="row-content" data-field="ld2410.stationaryEnergy" data-unit="%"></span>
+                    </div>
+                    <div class="row"><a data-t="t.konfigurieren" href="./sensors/ld2410">Konfigurieren</a></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script src="js/lang-de.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    const pollState  = document.getElementById('pollState');
+    const pointCells = Array.from(document.querySelectorAll('[data-points]'));
+    const view = SensorView.create();
+
+    /* Kalibrierpunkte stehen in der Konfiguration, nicht bei den Messwerten. Einmal holen
+     * genügt, von selbst ändern die sich nicht. */
+    Api.config().then(function (config) {
+        pointCells.forEach(function (cell) {
+            const points = SensorView.valueAt(config.sensors, cell.dataset.points);
+            const count  = Array.isArray(points) ? points.length : 0;
+            cell.textContent = count === 0 ? I18n.t('js.sensors.no_points')
+                             : I18n.plural('js.sensors.points', count);
+        });
+    }).catch(function () {
+        /* Nicht kritisch: Die Messwerte laufen auch ohne. Ist die Sitzung abgelaufen, meldet
+         * sich die Poll-Schleife unten. */
+    });
+
+    let failing = false;
+
+    Api.poll(function () {
+        return Api.sensors().then(function (data) {
+            view.render(data);
+            if (failing) {
+                failing = false;
+                pollState.textContent = I18n.t('js.sensors.list_title');
+            }
+        }).catch(function (error) {
+            if (!error.unauthorized) {
+                failing = true;
+                pollState.textContent = I18n.t('js.connection_lost_last_values');
+            }
+            throw error;
+        });
+    });
+})();
+</script>
+</body>
+</html>

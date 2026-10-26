@@ -1,0 +1,732 @@
+<!-- connections.html — WLAN, MQTT und die eingetragenen Shelly-Geräte.
+     Route: GET /connections
+
+     Statuszeilen kommen aus GET /api/status (Verbindungszustand), die Eingabefelder aus
+     GET /api/config (eingestellte Werte). Das ist bewusst getrennt: Im Hotspot-Betrieb ist
+     die eingetragene SSID eine andere als die, mit der das Gerät gerade verbunden ist.
+
+     Die Shelly-Logik fehlt noch — hier werden Geräte nur eingetragen, nicht angesprochen. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- I18N_LOADER: Bei einer anderen Sprache als Deutsch das Woerterbuch vor dem Zeichnen laden
+         und den Inhalt bis zum Ersetzen der Texte verbergen. Die Liste der Sprachen steht hier
+         und in nichts sonst; eine neue Sprache braucht lang-xx.js und einen Eintrag hier. -->
+    <script>(function(){var l='de';try{l=localStorage.getItem('hyphahome-sens.lang')||(navigator.language||'de').slice(0,2).toLowerCase();}catch(e){}
+    if(['en'].indexOf(l)>=0){document.documentElement.className+=' i18n-wait';document.write('<script src="'+(location.protocol==='file:'?'':'/')+'js/lang-'+l+'.js"><\/script>');}})();</script>
+    <style>.i18n-wait body{visibility:hidden}</style>
+    <title data-t="t.hypha_home_sens_verbindungen">Hypha Home - Sens &ndash; Verbindungen</title>
+    <script>(function(){var t=null;try{t=localStorage.getItem('hyphahome-sens.theme');}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();</script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="images/logo-dunkel.svg">
+    <link rel="icon" type="image/svg+xml" href="images/logo-hell.svg" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<div class="app">
+
+    <nav class="sidebar">
+        <div class="brand">
+            <span class="brand-logo"><img class="logo-for-light" src="images/logo-dunkel.svg" alt="Hypha-Home"><img class="logo-for-dark" src="images/logo-hell.svg" alt=""></span>
+            <div>
+                <div class="brand-title">Hypha Home - Sens</div>
+                <div class="brand-sub">by EideardVMR</div>
+            </div>
+        </div>
+        <ul class="nav">
+            <li><a href="./"><span data-t="nav.home">Startseite</span></a></li>
+            <li><a href="./connections" class="active"><span data-t="nav.connections">Verbindungen</span></a></li>
+            <li><a href="./sensors"><span data-t="nav.sensors">Sensoren</span></a></li>
+            <li><a href="./control"><span data-t="nav.control">Steuerung</span></a></li>
+            <li><a href="./settings"><span data-t="nav.settings">Einstellungen</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a data-t="nav.logout" href="./logout">Abmelden</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="page-head">
+            <div>
+                <h1 data-t="nav.connections">Verbindungen</h1>
+                <p data-t="t.wlan_mqtt_und_shelly_geraete" class="sub">WLAN, MQTT und Shelly-Ger&auml;te</p>
+            </div>
+            <button type="button" class="theme-toggle" id="themeToggle" data-t-attr="title:t.design_umschalten;aria-label:t.design_umschalten" title="Design umschalten" aria-label="Design umschalten"></button>
+        </div>
+
+        <div class="panel" id="wlan">
+            <div class="panel-head"><h2>WLAN</h2></div>
+
+            <div class="tile-rows">
+                <div class="row">
+                    <span data-t="common.status" class="row-title">Status</span>
+                    <span id="wlanState"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.verbunden_mit" class="row-title">Verbunden mit</span>
+                    <span class="row-content" id="wlanSsid">&ndash;</span>
+                </div>
+                <div class="row">
+                    <span data-t="t.signalstaerke" class="row-title">Signalst&auml;rke</span>
+                    <span class="row-content" id="wlanRssi">&ndash;</span>
+                </div>
+                <div class="row">
+                    <span data-t="t.ip_adresse" class="row-title">IP-Adresse</span>
+                    <span class="row-content" id="wlanIp">&ndash;</span>
+                </div>
+                <div class="row">
+                    <span data-t="t.mac_adresse" class="row-title">MAC-Adresse</span>
+                    <span class="row-content" id="wlanMac">&ndash;</span>
+                </div>
+            </div>
+
+            <form id="wlanForm">
+                <label data-t="t.netz" for="ssid">Netz</label>
+                <select id="ssid" name="ssid">
+                    <option data-t="t.suche_laeuft" value="">&ndash; Suche l&auml;uft &ndash;</option>
+                </select>
+
+                <button data-t="t.netze_suchen" class="btn-ghost" type="button" id="rescan">Netze suchen</button>
+
+                <label data-t="common.password" for="wlanPassword">Passwort</label>
+                <input data-t-attr="placeholder:t.unveraendert_lassen" type="password" id="wlanPassword" name="wlanPassword"
+                       autocomplete="off" placeholder="unver&auml;ndert lassen">
+
+                <button data-t="t.wlan_speichern" class="btn" type="submit" id="saveWlan" disabled>WLAN speichern</button>
+            </form>
+        </div>
+
+        <div class="panel" id="mqtt">
+            <div class="panel-head"><h2>MQTT</h2></div>
+
+            <div class="tile-rows">
+                <div class="row">
+                    <span data-t="common.status" class="row-title">Status</span>
+                    <span id="mqttState"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.verbunden_mit" class="row-title">Verbunden mit</span>
+                    <span class="row-content" id="mqttBroker">&ndash;</span>
+                </div>
+            </div>
+
+            <form id="mqttForm">
+                <label data-t="t.broker" for="mqttUrl">Broker</label>
+                <input type="text" id="mqttUrl" name="mqttUrl"
+                       autocapitalize="none" autocorrect="off" spellcheck="false">
+
+                <label data-t="t.port" for="mqttPort">Port</label>
+                <input type="number" id="mqttPort" name="mqttPort" min="1" max="65535">
+
+                <label data-t="t.benutzername" for="mqttUser">Benutzername</label>
+                <input type="text" id="mqttUser" name="mqttUser"
+                       autocapitalize="none" autocorrect="off" spellcheck="false">
+
+                <label data-t="common.password" for="mqttPassword">Passwort</label>
+                <input data-t-attr="placeholder:t.unveraendert_lassen" type="password" id="mqttPassword" name="mqttPassword"
+                       autocomplete="off" placeholder="unver&auml;ndert lassen">
+
+                <button data-t="t.mqtt_speichern" class="btn" type="submit" id="saveMqtt" disabled>MQTT speichern</button>
+            </form>
+        </div>
+
+        <div class="panel" id="shellys">
+            <div class="panel-head"><h2 data-t="t.shelly_geraete">Shelly-Ger&auml;te</h2></div>
+            <p data-t="t.name_und_adresse_eintragen_speichern_den" class="sub">Name und Adresse eintragen, speichern &ndash; den Rest ermittelt
+            das Ger&auml;t selbst. Verlangt es ein Passwort, wird danach danach gefragt.
+            Geschaltet wird noch nichts, die Steuerung kommt sp&auml;ter.</p>
+
+            <form id="shellyForm">
+                <div id="shellyList"></div>
+
+                <p class="sub" id="shellyHint"></p>
+
+                <button data-t="t.shelly_hinzufuegen" class="btn-ghost" type="button" id="addShelly">+&nbsp;&nbsp;Shelly hinzuf&uuml;gen</button>
+                <button data-t="t.shellys_speichern" class="btn" type="submit" id="saveShellys" disabled>Shellys speichern</button>
+            </form>
+        </div>
+
+    </main>
+</div>
+
+<script src="js/lang-de.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    const EMPTY = SensorView.EMPTY;
+    const NBSP  = SensorView.NBSP;
+
+    /* Shelly-Typen. Steht hier und nicht im Gerät: Was die Typen bedeuten, entscheidet sich
+     * erst mit der Steuerungslogik. Bis dahin ist der Wert für die Firmware ein reiner Text. */
+    /* Abstand beim Nachfragen, bis ein Ergebnis vorliegt.
+     *
+     * Jede Nachfrage ist eine eigene TCP-Verbindung, und der Webserver des Geräts bedient nur
+     * eine gleichzeitig (siehe FastWebServer.h). Zu dichtes Nachfragen verdrängt damit andere
+     * Anfragen — mit 700 ms stand der Seitenaufbau phasenweise still. Eine WLAN-Suche dauert
+     * ohnehin zwei bis vier Sekunden, eine Geräteerkennung meist unter einer. */
+    const SCAN_POLL_MS  = 1500;
+    const PROBE_POLL_MS = 1000;
+
+    const wlanForm   = document.getElementById('wlanForm');
+    const mqttForm   = document.getElementById('mqttForm');
+    const shellyForm = document.getElementById('shellyForm');
+
+    const ssidSelect = document.getElementById('ssid');
+    const rescan     = document.getElementById('rescan');
+    const shellyList = document.getElementById('shellyList');
+    const shellyHint = document.getElementById('shellyHint');
+    const addShelly  = document.getElementById('addShelly');
+
+    let maxShellys = 0;
+
+    /* ---------- Statuszeilen ---------- */
+
+    function setText(id, value) {
+        document.getElementById(id).textContent = (value === undefined || value === null
+                                                || value === '') ? EMPTY : value;
+    }
+
+    function renderStatus(status) {
+        const wlan = status.wlan || {};
+        const mqtt = status.mqtt || {};
+
+        document.getElementById('wlanState').innerHTML = SensorView.badge(
+            I18n.t('wlan.state.' + (wlan.state || 'unknown')),
+            wlan.connected ? 'ok' : (wlan.hotspot ? 'warn' : 'err'));
+
+        setText('wlanSsid', wlan.ssid);
+        setText('wlanIp', wlan.ip);
+        setText('wlanMac', wlan.mac);
+        /* Nur ein RSSI-Wert ohne Balken sagt wenig; die Balken liefert das Gerät schon fertig. */
+        setText('wlanRssi', (wlan.rssi === undefined || wlan.rssi === 0)
+            ? null : wlan.rssi + NBSP + 'dBm (' + (wlan.bars || 0) + '/4)');
+
+        document.getElementById('mqttState').innerHTML = SensorView.badge(
+            I18n.t(mqtt.connected ? 'status.connected' : 'status.not_connected'), mqtt.connected ? 'ok' : 'err');
+
+        /* Der Broker, mit dem tatsächlich gearbeitet wird. Das ist nicht zwingend der, der
+         * unten im Formular steht: Nach einer Änderung dauert es einen Augenblick, bis das
+         * Gerät umgestellt hat. Ohne diese Zeile stünde "Verbunden" neben einer Adresse, zu
+         * der gar keine Verbindung besteht — genau das führt in die Irre. */
+        const configured = (mqtt.url || '') + ':' + (mqtt.port || '');
+        const active = mqtt.broker || '';
+        setText('mqttBroker', active);
+        if (active && active !== configured) {
+            document.getElementById('mqttBroker').innerHTML =
+                active + ' ' + SensorView.badge(I18n.t('js.connections.setting_differs'), 'warn');
+        }
+    }
+
+    /* ---------- Netzsuche ---------- */
+
+    /* Die eingetragene SSID muss in der Auswahl stehen, auch wenn das Netz gerade nicht zu
+     * sehen ist — sonst würde Speichern sie stillschweigend durch ein anderes Netz ersetzen. */
+    let configuredSsid = '';
+
+    /* Ob in dieser Sitzung schon gesucht wurde — nur für die Beschriftung. */
+    let scanned = false;
+
+    function fillSsidOptions(networks) {
+        const seen = new Set();
+        ssidSelect.innerHTML = '';
+
+        networks.forEach(function (net) {
+            seen.add(net.ssid);
+            const option = document.createElement('option');
+            option.value = net.ssid;
+            option.textContent = net.ssid + '  (' + net.rssi + ' dBm'
+                               + (net.secure ? '' : ', ' + I18n.t('js.connections.open_network')) + ')';
+            ssidSelect.appendChild(option);
+        });
+
+        if (configuredSsid && !seen.has(configuredSsid)) {
+            const option = document.createElement('option');
+            option.value = configuredSsid;
+            option.textContent = configuredSsid + '  (' + I18n.t('js.connections.out_of_range') + ')';
+            ssidSelect.insertBefore(option, ssidSelect.firstChild);
+        }
+
+        if (!networks.length && !configuredSsid) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = I18n.t(scanned ? 'js.connections.no_network' : 'js.connections.not_scanned');
+            ssidSelect.appendChild(option);
+        }
+
+        ssidSelect.value = configuredSsid;
+    }
+
+    /* Holt das Ergebnis und fragt nach, solange die Suche läuft. Begrenzt auf wenige
+     * Versuche, damit die Seite nicht endlos pollt, falls etwas klemmt. */
+    async function fetchScanResult(attempt) {
+        const result = await Api.request('/api/wifi/scan');
+        if (result.running) {
+            if (attempt >= 15) {
+                Toast.warn(I18n.t('js.connections.scan_slow'));
+                return;
+            }
+            setTimeout(function () { fetchScanResult(attempt + 1); }, SCAN_POLL_MS);
+            return;
+        }
+        scanned = true;
+        fillSsidOptions(result.networks || []);
+        rescan.disabled = false;
+        rescan.textContent = I18n.t('js.connections.scan');
+    }
+
+    async function startScan() {
+        rescan.disabled = true;
+        rescan.textContent = I18n.t('js.connections.scanning');
+        try {
+            await Api.request('/api/wifi/scan', { method: 'POST' });
+            await fetchScanResult(0);
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            Toast.error(I18n.t('js.connections.scan_failed'));
+            rescan.disabled = false;
+            rescan.textContent = I18n.t('js.connections.scan');
+        }
+    }
+
+    rescan.addEventListener('click', startScan);
+
+    /* ---------- Shelly-Liste ---------- */
+
+    /* Was die Erkennung ergeben hat, je Eintrag. Steht nicht im DOM, weil es nicht
+     * bearbeitbar ist — der Nutzer gibt nur Name, Adresse und ggf. Passwort ein. */
+    const detected = new Map();
+
+    function shellyCount() {
+        return shellyList.querySelectorAll('.shelly-entry').length;
+    }
+
+    function updateShellyHint() {
+        const n = shellyCount();
+        addShelly.disabled = n >= maxShellys;
+        shellyHint.textContent = n === 0
+            ? I18n.t('js.connections.no_devices')
+            : I18n.plural('js.connections.devices_of_max', n, { max: maxShellys });
+    }
+
+    function field(labelText, type, key, value, placeholder) {
+        const wrap = document.createElement('div');
+
+        const label = document.createElement('label');
+        label.textContent = labelText;
+        wrap.appendChild(label);
+
+        const input = document.createElement('input');
+        input.type = type;
+        input.dataset.key = key;
+        input.value = value || '';
+        if (placeholder) input.placeholder = placeholder;
+        if (type === 'text') {
+            input.autocapitalize = 'none';
+            input.autocomplete = 'off';
+            input.spellcheck = false;
+        }
+        wrap.appendChild(input);
+
+        return wrap;
+    }
+
+    /* Die vier Einsatzarten. Die Schlüssel stehen so in der config.json und werden von der
+     * Firmware beim Einlesen geprüft. */
+    const SHELLY_KINDS = [
+        { value: '',        text: I18n.t('js.connections.kind_choose') },
+        { value: 'switch1', text: I18n.t('shelly.kind.switch1') },
+        { value: 'switch2', text: I18n.t('shelly.kind.switch2') },
+        { value: 'cover',   text: I18n.t('shelly.kind.cover') },
+        { value: 'dimmer',  text: I18n.t('shelly.kind.dimmer') }
+    ];
+
+    function kindField(value) {
+        const wrap = document.createElement('div');
+
+        const label = document.createElement('label');
+        label.textContent = I18n.t('js.connections.usage');
+        wrap.appendChild(label);
+
+        const select = document.createElement('select');
+        select.dataset.key = 'kind';
+        SHELLY_KINDS.forEach(function (kind) {
+            const option = document.createElement('option');
+            option.value = kind.value;
+            option.textContent = kind.text;
+            select.appendChild(option);
+        });
+        select.value = value || '';
+        wrap.appendChild(select);
+
+        return wrap;
+    }
+
+    /* Anzeige der Passwortprüfung. Die Schlüssel kommen so von der Firmware. */
+    const PASSWORD_STATES = {
+        notNeeded: { text: I18n.t('js.connections.pw_not_needed'), kind: 'ok' },
+        valid:     { text: I18n.t('js.connections.pw_valid'), kind: 'ok' },
+        wrong:     { text: I18n.t('js.connections.pw_wrong'), kind: 'err' },
+        missing:   { text: I18n.t('js.connections.pw_missing'), kind: 'err' },
+        unchecked: { text: I18n.t('js.connections.pw_unchecked'), kind: 'muted' }
+    };
+
+    /* Die Ergebniszeilen, wie auf den Sensorseiten. */
+    const INFO_ROWS = [
+        { key: 'model',    title: I18n.t('js.connections.row_model') },
+        { key: 'gen',      title: I18n.t('js.connections.row_generation') },
+        { key: 'password', title: I18n.t('js.connections.row_password') },
+        { key: 'mac',      title: 'MAC' }
+    ];
+
+    function infoTable() {
+        const box = document.createElement('div');
+        box.className = 'tile-rows';
+        INFO_ROWS.forEach(function (def) {
+            const row = document.createElement('div');
+            row.className = 'row';
+
+            const title = document.createElement('span');
+            title.className = 'row-title';
+            title.textContent = def.title;
+            row.appendChild(title);
+
+            const content = document.createElement('span');
+            content.className = 'row-content';
+            content.dataset.info = def.key;
+            row.appendChild(content);
+
+            box.appendChild(row);
+        });
+        return box;
+    }
+
+    /* Füllt die Tabelle. Werte vom Gerät kommen per textContent hinein, nicht als HTML: Es
+     * ist ein fremdes Gerät im Netz, und was es schickt, ist nicht vertrauenswürdig. */
+    function showInfo(entry, values) {
+        const set = function (key, text) {
+            entry.querySelector('[data-info="' + key + '"]').textContent = text || SensorView.EMPTY;
+        };
+        set('model', values.model);
+        set('gen',   values.gen ? String(values.gen) : '');
+        set('mac',   values.mac);
+
+        const cell = entry.querySelector('[data-info="password"]');
+        const state = PASSWORD_STATES[values.password];
+        if (state) {
+            cell.innerHTML = SensorView.badge(state.text, state.kind);
+        } else if (values.password === 'stored') {
+            cell.innerHTML = SensorView.badge(I18n.t('js.connections.stored'), 'muted');
+        } else {
+            cell.textContent = SensorView.EMPTY;
+        }
+    }
+
+    /* Holt das Ergebnis und fragt nach, solange die Erkennung läuft. */
+    async function fetchProbeResult(attempt) {
+        const result = await Api.request('/api/shelly/probe');
+        if (result.running) {
+            if (attempt >= 20) throw new Error(I18n.t('js.connections.probe_slow'));
+            await new Promise(function (done) { setTimeout(done, PROBE_POLL_MS); });
+            return fetchProbeResult(attempt + 1);
+        }
+        return result;
+    }
+
+    /* Fragt ein Gerät ab und trägt das Ergebnis in den Eintrag ein.
+     *
+     * Die Firmware arbeitet das in dieser Reihenfolge ab: /shelly (ohne Passwort) liefert
+     * Modell, Generation und MAC und sagt, ob ein Passwort verlangt wird. Dann wird das
+     * Passwort mit dem zur Generation passenden Aufruf geprüft, und bei einem Shelly 2 oder
+     * 2.5 wird die Betriebsart (Schalter oder Rollo) ermittelt. */
+    async function probeEntry(entry) {
+        const address = entry.querySelector('[data-key="address"]').value.trim();
+        if (!address) {
+            Toast.error(I18n.t('js.connections.address_first'));
+            return;
+        }
+        const password = entry.querySelector('[data-key="password"]').value;
+
+        const status = entry.querySelector('.entry-status');
+        const button = entry.querySelector('.entry-probe');
+        status.innerHTML = SensorView.badge(I18n.t('js.connections.probing'), 'muted');
+        button.disabled = true;
+
+        try {
+            await Api.request('/api/shelly/probe', {
+                method: 'POST',
+                body: JSON.stringify({ address: address, password: password })
+            });
+            const info = await fetchProbeResult(0);
+
+            if (!info.ok) {
+                status.innerHTML = SensorView.badge(info.error ? I18n.error(info.error, { status: info.httpStatus }) : I18n.t('js.connections.unreachable'), 'err');
+                detected.delete(entry);
+                return;
+            }
+
+            /* Adresse gewechselt, aber eine MAC von früher bekannt? Dann prüfen, ob dahinter
+             * noch dasselbe Gerät steckt. Ohne das schaltet man nach einer Neuvergabe durch
+             * den Router unbemerkt ein fremdes Relais. */
+            const knownMac = entry.dataset.knownMac || '';
+            if (knownMac && info.mac && knownMac.toUpperCase() !== info.mac.toUpperCase()) {
+                status.innerHTML = SensorView.badge(I18n.t('js.connections.other_device'), 'err');
+                Toast.error(I18n.t('js.connections.other_device_detail', { mac: info.mac, known: knownMac }));
+                detected.set(entry, info);
+                return;
+            }
+
+            detected.set(entry, info);
+            entry.dataset.knownMac = info.mac || '';
+            status.innerHTML = SensorView.badge(I18n.t('js.connections.detected_ok'), 'ok');
+            showInfo(entry, {
+                model:    info.app ? info.app + ' (' + info.model + ')' : info.model,
+                gen:      info.gen,
+                password: info.passwordState,
+                mac:      info.mac
+            });
+
+            if (info.passwordState === 'wrong') {
+                Toast.error(I18n.t('js.connections.password_rejected'));
+            } else if (info.passwordState === 'missing') {
+                Toast.warn(I18n.t('js.connections.password_required'));
+            }
+
+            /* Die Verwendung nur übernehmen, wenn sie ermittelt wurde. Sonst bleibt eine
+             * frühere Auswahl des Nutzers stehen, statt mit "bitte wählen" überschrieben zu
+             * werden. */
+            const kindSelect = entry.querySelector('[data-key="kind"]');
+            if (info.kind) {
+                kindSelect.value = info.kind;
+            } else if (!kindSelect.value && info.passwordState !== 'wrong'
+                       && info.passwordState !== 'missing') {
+                Toast.warn(I18n.t('js.connections.kind_unknown'));
+            }
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            status.innerHTML = SensorView.badge(I18n.t('js.connections.failed'), 'err');
+            Toast.error(error.message);
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    function addShellyEntry(shelly) {
+        if (shellyCount() >= maxShellys) return;
+        const data = shelly || {};
+
+        const entry = document.createElement('div');
+        entry.className = 'shelly-entry';
+        if (data.mac) entry.dataset.knownMac = data.mac;
+
+        const head = document.createElement('div');
+        head.className = 'entry-head';
+
+        const title = document.createElement('span');
+        title.textContent = data.name || I18n.t('js.connections.new_device');
+        head.appendChild(title);
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'grid-remove';
+        remove.title = I18n.t('js.connections.remove_device');
+        remove.setAttribute('aria-label', I18n.t('js.connections.remove_device'));
+        remove.innerHTML = '&times;';
+        remove.addEventListener('click', function () {
+            detected.delete(entry);
+            entry.remove();
+            updateShellyHint();
+        });
+        head.appendChild(remove);
+        entry.appendChild(head);
+
+        const name = field(I18n.t('js.connections.name_internal'), 'text', 'name', data.name, 'Shelly');
+        /* Überschrift mitführen, damit man bei mehreren Geräten sieht, welches man bearbeitet. */
+        name.querySelector('input').addEventListener('input', function (event) {
+            title.textContent = event.target.value || I18n.t('js.connections.new_device');
+        });
+        entry.appendChild(name);
+
+        entry.appendChild(field(I18n.t('js.connections.address'), 'text', 'address', data.address, '192.168.1.100'));
+
+        /* Immer sichtbar: Das Gerät verrät erst bei der Erkennung, ob es eines verlangt. */
+        entry.appendChild(field(I18n.t('js.connections.password'), 'password', 'password', '',
+            data.hasPassword ? I18n.t('js.stored_placeholder')
+                             : I18n.t('js.connections.device_password_hint')));
+
+        entry.appendChild(kindField(data.kind));
+
+        const actions = document.createElement('div');
+        actions.className = 'entry-actions';
+
+        const probe = document.createElement('button');
+        probe.type = 'button';
+        probe.className = 'btn-ghost entry-probe';
+        probe.textContent = I18n.t('js.connections.probe_button');
+        probe.addEventListener('click', function () { probeEntry(entry); });
+        actions.appendChild(probe);
+        entry.appendChild(actions);
+
+        const status = document.createElement('div');
+        status.className = 'entry-status';
+        status.innerHTML = data.gen ? SensorView.badge(I18n.t('js.connections.saved'), 'muted')
+                                    : SensorView.badge(I18n.t('js.connections.not_probed'), 'muted');
+        entry.appendChild(status);
+
+        entry.appendChild(infoTable());
+        /* Gespeichert sind nur Generation und MAC; Modell und Passwortstatus gibt es erst
+         * nach einer Erkennung. */
+        showInfo(entry, {
+            gen:      data.gen,
+            mac:      data.mac,
+            password: data.hasPassword ? 'stored' : ''
+        });
+
+        /* Bereits erkannte Angaben übernehmen, damit sie beim Speichern erhalten bleiben,
+         * auch wenn in dieser Sitzung nicht erneut erkannt wurde. */
+        if (data.gen) detected.set(entry, data);
+
+        shellyList.appendChild(entry);
+        updateShellyHint();
+    }
+
+    addShelly.addEventListener('click', function () { addShellyEntry(null); });
+
+    /* Liest die Einträge aus. Ein Gerät ohne Adresse wird übergangen — das ist eine neu
+     * angelegte, noch nicht ausgefüllte Zeile. Dieselbe Regel gilt im Gerät beim Einlesen. */
+    function collectShellys() {
+        const list = [];
+        shellyList.querySelectorAll('.shelly-entry').forEach(function (entry) {
+            const values = {};
+            entry.querySelectorAll('[data-key]').forEach(function (input) {
+                values[input.dataset.key] = input.value.trim();
+            });
+            if (!values.address) return;
+
+            /* Leeres Feld heißt "unverändert": Der Schlüssel wird weggelassen, und das Gerät
+             * übernimmt das bisherige Passwort anhand der Adresse. */
+            if (values.password === '') delete values.password;
+
+            /* MAC und Generation mitschicken, damit die Firmware sie speichert. Beide stammen
+             * vom Gerät selbst und werden in der Oberfläche nicht bearbeitet. */
+            const info = detected.get(entry);
+            if (info) {
+                values.mac = info.mac || '';
+                values.gen = info.gen || 0;
+            }
+
+            list.push(values);
+        });
+        return list;
+    }
+
+    /* ---------- Speichern ---------- */
+
+    async function save(button, patch, okText) {
+        const label = button.textContent;
+        button.disabled = true;
+        button.textContent = I18n.t('common.saving');
+        try {
+            await Api.request('/api/config', {
+                method: 'POST',
+                body: JSON.stringify(patch)
+            });
+            Toast.ok(okText);
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            Toast.error(I18n.t('common.save_failed', { message: error.message }));
+        }
+        button.disabled = false;
+        button.textContent = label;
+    }
+
+    wlanForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const ssid = ssidSelect.value;
+        if (!ssid) {
+            Toast.error(I18n.t('js.connections.choose_network'));
+            return;
+        }
+
+        const wlan = { ssid: ssid };
+        /* Ein leeres Passwortfeld heißt "unverändert", nicht "kein Passwort". Sonst würde
+         * jedes Speichern der SSID nebenbei das WLAN-Passwort löschen. */
+        const password = document.getElementById('wlanPassword').value;
+        if (password !== '') wlan.password = password;
+
+        save(document.getElementById('saveWlan'), { wlan: wlan },
+             I18n.t('js.connections.wlan_saved'));
+    });
+
+    mqttForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const mqtt = {
+            url:      document.getElementById('mqttUrl').value.trim(),
+            port:     Number(document.getElementById('mqttPort').value) || 1883,
+            username: document.getElementById('mqttUser').value.trim()
+        };
+        const password = document.getElementById('mqttPassword').value;
+        if (password !== '') mqtt.password = password;
+
+        save(document.getElementById('saveMqtt'), { mqtt: mqtt },
+             I18n.t('js.connections.mqtt_saved'));
+    });
+
+    shellyForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const list = collectShellys();
+        await save(document.getElementById('saveShellys'), { shellys: list },
+             list.length === 0 ? I18n.t('js.connections.devices_removed')
+                 : I18n.plural('js.connections.devices_saved', list.length));
+    });
+
+    /* ---------- Start ---------- */
+
+    Api.config().then(function (config) {
+        configuredSsid = (config.wlan && config.wlan.ssid) || '';
+        maxShellys = (config.limits && config.limits.shellys) || 0;
+
+        const mqtt = config.mqtt || {};
+        document.getElementById('mqttUrl').value  = mqtt.url || '';
+        document.getElementById('mqttPort').value = mqtt.port || 1883;
+        document.getElementById('mqttUser').value = mqtt.username || '';
+
+        /* Nur der Hinweis, ob ein Passwort hinterlegt ist — das Passwort selbst liefert die
+         * Schnittstelle nicht mehr. */
+        document.getElementById('mqttPassword').placeholder = mqtt.hasPassword
+            ? I18n.t('js.stored_placeholder') : I18n.t('js.no_password_set');
+        document.getElementById('wlanPassword').placeholder =
+            (config.wlan && config.wlan.hasPassword)
+                ? I18n.t('js.stored_placeholder') : I18n.t('js.no_password_set');
+
+        (config.shellys || []).forEach(addShellyEntry);
+        updateShellyHint();
+
+        document.getElementById('saveWlan').disabled   = false;
+        document.getElementById('saveMqtt').disabled   = false;
+        document.getElementById('saveShellys').disabled = false;
+
+        /* Bewusst **keine** Suche beim Seitenaufbau. Zwei Gründe: Ein Scan lässt den Funkteil
+         * über die Kanäle springen, was den Durchsatz für alles andere einbrechen lässt —
+         * gemessen stieg der Seitenaufbau dadurch auf über zehn Sekunden. Und im
+         * Hotspot-Betrieb kann er die Verbindung des Browsers kurz kappen, also ausgerechnet
+         * dann, wenn man das WLAN einrichtet. Gesucht wird auf Knopfdruck. */
+        fillSsidOptions([]);
+    }).catch(function (error) {
+        if (error.unauthorized) { Api.toLogin(); return; }
+        Toast.error(I18n.t('error.CONFIG_LOAD_FAILED'));
+    });
+
+    Api.poll(function () {
+        return Api.request('/api/status').then(renderStatus);
+    });
+})();
+</script>
+</body>
+</html>

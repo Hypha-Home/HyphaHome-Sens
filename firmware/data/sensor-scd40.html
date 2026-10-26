@@ -1,0 +1,125 @@
+<!-- sensor-scd40.html — Messwerte und Ein-/Ausschalter des Sensors SCD40.
+     Route: GET /sensors/scd40
+
+     Es gibt hier nichts weiter einzustellen als den Schalter; die Seite ist da, damit jeder
+     Sensor an derselben Stelle abschaltbar ist. Gespeichert wird sensors.scd40.enabled mit
+     POST /api/config. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- I18N_LOADER: Bei einer anderen Sprache als Deutsch das Woerterbuch vor dem Zeichnen laden
+         und den Inhalt bis zum Ersetzen der Texte verbergen. Die Liste der Sprachen steht hier
+         und in nichts sonst; eine neue Sprache braucht lang-xx.js und einen Eintrag hier. -->
+    <script>(function(){var l='de';try{l=localStorage.getItem('hyphahome-sens.lang')||(navigator.language||'de').slice(0,2).toLowerCase();}catch(e){}
+    if(['en'].indexOf(l)>=0){document.documentElement.className+=' i18n-wait';document.write('<script src="'+(location.protocol==='file:'?'':'/')+'js/lang-'+l+'.js"><\/script>');}})();</script>
+    <style>.i18n-wait body{visibility:hidden}</style>
+    <title data-t="t.hypha_home_sens_sensor_scd40">Hypha Home - Sens &ndash; Sensor &ndash; SCD40</title>
+    <script>(function(){var t=null;try{t=localStorage.getItem('hyphahome-sens.theme');}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();</script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="images/logo-dunkel.svg">
+    <link rel="icon" type="image/svg+xml" href="images/logo-hell.svg" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<div class="app">
+
+    <nav class="sidebar">
+        <div class="brand">
+            <span class="brand-logo"><img class="logo-for-light" src="images/logo-dunkel.svg" alt="Hypha-Home"><img class="logo-for-dark" src="images/logo-hell.svg" alt=""></span>
+            <div>
+                <div class="brand-title">Hypha Home - Sens</div>
+                <div class="brand-sub">by EideardVMR</div>
+            </div>
+        </div>
+        <ul class="nav">
+            <li><a href="../"><span data-t="nav.home">Startseite</span></a></li>
+            <li><a href="../connections"><span data-t="nav.connections">Verbindungen</span></a></li>
+            <li><a href="../sensors" class="active"><span data-t="nav.sensors">Sensoren</span></a></li>
+            <li><a href="../control"><span data-t="nav.control">Steuerung</span></a></li>
+            <li><a href="../settings"><span data-t="nav.settings">Einstellungen</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a data-t="nav.logout" href="../logout">Abmelden</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="page-head">
+            <div>
+                <h1 data-t="t.sensor_scd40">Sensor &ndash; SCD40</h1>
+                <p data-t="t.konfiguration_des_co2_sensors" class="sub">Konfiguration des CO2-Sensors</p>
+            </div>
+            <button type="button" class="theme-toggle" id="themeToggle" data-t-attr="title:t.design_umschalten;aria-label:t.design_umschalten" title="Design umschalten" aria-label="Design umschalten"></button>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2 data-t="common.measurements">Messwerte</h2></div>
+
+            <div class="tile-rows">
+                <div class="row">
+                    <span data-t="common.status" class="row-title">Status</span>
+                    <span data-status="scd40"></span>
+                </div>
+                <div class="row">
+                    <span class="row-title">CO2</span>
+                    <span class="row-content" data-field="scd40.co2" data-unit="ppm"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.bewertung" class="row-title">Bewertung</span>
+                    <span class="row-content" data-field="scd40.level" data-i18n="level"></span>
+                </div>
+                <div class="row">
+                    <span data-t="common.temperature" class="row-title">Temperatur</span>
+                    <span class="row-content" data-field="scd40.temperature" data-digits="1" data-unit="&deg;C"></span>
+                </div>
+                <div class="row">
+                    <span data-t="common.humidity" class="row-title">Luftfeuchte</span>
+                    <span class="row-content" data-field="scd40.humidity" data-digits="1" data-unit="%"></span>
+                </div>
+            </div>
+            <p data-t="t.der_scd40_liefert_etwa_alle_fuenf" class="sub">Der SCD40 liefert etwa alle f&uuml;nf Sekunden einen Wert. Die Bewertung des CO2-Gehalts geht zusammen mit der des ENS160 in die zusammengefasste Luftqualit&auml;t ein.</p>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2 data-t="common.operation">Betrieb</h2></div>
+            <p data-t="common.enable_info" class="sub">Ein ausgeschalteter Sensor wird weder gelesen noch gemeldet: Die Oberfl&auml;che
+            zeigt ihn als deaktiviert, Home Assistant als nicht verf&uuml;gbar. Die &Auml;nderung gilt
+            sofort, ein Neustart ist nicht n&ouml;tig.</p>
+
+            <form id="enableForm">
+                <label class="check"><input type="checkbox" id="enableBox" disabled> <span data-t="common.sensor_enabled">Sensor eingeschaltet</span></label>
+                <button data-t="common.save" class="btn" type="submit" id="enableSave" disabled>Speichern</button>
+            </form>
+        </div>
+
+    </main>
+</div>
+
+<script src="js/lang-de.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    const view   = SensorView.create();
+    const enable = SensorEnable.bind('scd40');
+
+    Api.config().then(function (config) {
+        enable.load(config);
+    }).catch(function (error) {
+        if (error.unauthorized) { Api.toLogin(); return; }
+        Toast.error(I18n.t('error.CONFIG_LOAD_FAILED'));
+    });
+
+    Api.poll(function () {
+        return Api.sensors().then(function (data) {
+            view.render(data);
+        });
+    });
+})();
+</script>
+</body>
+</html>

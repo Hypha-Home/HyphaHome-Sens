@@ -1,0 +1,8 @@
+[*.cpp]
+indent_size = 4
+
+[*.h]
+indent_size = 4
+
+[*.c]
+indent_size = 4

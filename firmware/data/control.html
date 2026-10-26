@@ -1,0 +1,669 @@
+<!-- control.html — Steuerung: Heizung, Licht und Lüftung schalten Shelly-Kanäle nach Sensorwerten.
+     Route: GET /control
+
+     Gelesen wird aus GET /api/config (Shellys, Regelkreise, Grenzwerte) und GET /api/sensors
+     (welche Sensoren da sind). Geschrieben wird über POST /api/config, je Regelkreis ein
+     Teilobjekt unter "controls".
+
+     Noch ohne Regelung: Die Seite legt nur fest, WAS geschaltet werden soll. Geschaltet wird
+     erst, wenn die Logik in der Firmware dazukommt. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- I18N_LOADER: Bei einer anderen Sprache als Deutsch das Woerterbuch vor dem Zeichnen laden
+         und den Inhalt bis zum Ersetzen der Texte verbergen. Die Liste der Sprachen steht hier
+         und in nichts sonst; eine neue Sprache braucht lang-xx.js und einen Eintrag hier. -->
+    <script>(function(){var l='de';try{l=localStorage.getItem('hyphahome-sens.lang')||(navigator.language||'de').slice(0,2).toLowerCase();}catch(e){}
+    if(['en'].indexOf(l)>=0){document.documentElement.className+=' i18n-wait';document.write('<script src="'+(location.protocol==='file:'?'':'/')+'js/lang-'+l+'.js"><\/script>');}})();</script>
+    <style>.i18n-wait body{visibility:hidden}</style>
+    <title data-t="t.hypha_home_sens_steuerung">Hypha Home - Sens &ndash; Steuerung</title>
+    <script>(function(){var t=null;try{t=localStorage.getItem('hyphahome-sens.theme');}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();</script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="images/logo-dunkel.svg">
+    <link rel="icon" type="image/svg+xml" href="images/logo-hell.svg" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<div class="app">
+
+    <nav class="sidebar">
+        <div class="brand">
+            <span class="brand-logo"><img class="logo-for-light" src="images/logo-dunkel.svg" alt="Hypha-Home"><img class="logo-for-dark" src="images/logo-hell.svg" alt=""></span>
+            <div>
+                <div class="brand-title">Hypha Home - Sens</div>
+                <div class="brand-sub">by EideardVMR</div>
+            </div>
+        </div>
+        <ul class="nav">
+            <li><a href="./"><span data-t="nav.home">Startseite</span></a></li>
+            <li><a href="./connections"><span data-t="nav.connections">Verbindungen</span></a></li>
+            <li><a href="./sensors"><span data-t="nav.sensors">Sensoren</span></a></li>
+            <li><a href="./control" class="active"><span data-t="nav.control">Steuerung</span></a></li>
+            <li><a href="./settings"><span data-t="nav.settings">Einstellungen</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a data-t="nav.logout" href="./logout">Abmelden</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="page-head">
+            <div>
+                <h1 data-t="nav.control">Steuerung</h1>
+                <p data-t="t.shelly_kanaele_direkt_vom_geraet_aus" class="sub">Shelly-Kan&auml;le direkt vom Ger&auml;t aus schalten. Die Regelung selbst
+                    ist noch nicht in der Firmware &ndash; hier wird nur festgelegt, was geschaltet werden soll.</p>
+            </div>
+            <button type="button" class="theme-toggle" id="themeToggle" data-t-attr="title:t.design_umschalten;aria-label:t.design_umschalten" title="Design umschalten" aria-label="Design umschalten"></button>
+        </div>
+
+        <!-- Heizung: nur Schaltausgänge -->
+        <div class="panel" id="ctl_heating" data-control="heating">
+            <div class="panel-head"><h2 data-t="t.heizung">Heizung</h2><span data-state></span></div>
+            <p data-t="t.schaltet_heizkreise_anhand_der_raumtemperatur" class="sub">Schaltet Heizkreise anhand der Raumtemperatur.</p>
+
+            <div class="tile-rows">
+                <div class="row">
+                    <span class="row-title">SHT41</span>
+                    <span class="row-content" data-status="sht41"></span>
+                </div>
+                <!-- Zustand der Regelung: Soll nach Hysterese, Ist an den Shelly-Kanälen. Striche,
+                     solange die Heizungssteuerung aus ist oder der Sensor fehlt. -->
+                <div class="row">
+                    <span data-t="t.soll_zustand" class="row-title">Soll-Zustand</span>
+                    <span class="row-content" data-field="heating.desired" data-i18n="heating.state"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.ist_zustand" class="row-title">Ist-Zustand</span>
+                    <span class="row-content" data-field="heating.actual" data-i18n="heating.state"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.sperre_noch" class="row-title">Wechsel gesperrt noch</span>
+                    <span class="row-content" data-field="heating.pendingMinutes" data-unit="min"></span>
+                </div>
+            </div>
+            <div class="msgbox warn" data-missing hidden></div>
+
+            <form>
+                <fieldset class="ctl-fields" disabled>
+                    <label class="check"><input type="checkbox" name="enabled"> <span data-t="t.heizungssteuerung_einschalten">Heizungssteuerung einschalten</span></label>
+
+                    <label data-t="t.ausgaenge">Ausg&auml;nge</label>
+                    <div data-outputs></div>
+                    <p class="sub" data-outputs-hint></p>
+                    <button data-t="t.ausgang_hinzufuegen" class="btn-ghost" type="button" data-add-output>+&nbsp;&nbsp;Ausgang hinzuf&uuml;gen</button>
+
+                    <!-- Nur sichtbar, solange die Heizungssteuerung eingeschaltet ist. Dieselben drei
+                         Werte sind per MQTT einstellbar (Home Assistant: number-Entitäten, die es
+                         ebenfalls nur bei eingeschalteter Steuerung gibt). -->
+                    <div data-when-enabled hidden>
+                        <label data-t="t.zieltemperatur_in_c" for="heating_targetTemp">Zieltemperatur (in &deg;C)</label>
+                        <input type="number" id="heating_targetTemp" name="targetTemp" min="5" max="30" step="0.1">
+
+                        <p data-t="t.nach_dem_schalten_gilt_eine_sperre" class="sub">Nach dem Schalten gilt eine Sperre gegen das Zur&uuml;ckschalten:
+                            Die <strong>Einschalthysterese</strong> ist die Zeit, die nach dem Ausschalten vergehen muss, bevor wieder
+                            eingeschaltet werden darf, die <strong>Ausschalthysterese</strong> die Zeit nach dem Einschalten, bevor wieder
+                            ausgeschaltet werden darf. 0 hei&szlig;t keine Sperre.</p>
+
+                        <label data-t="t.einschalthysterese_in_minuten" for="heating_hysteresisOnMin">Einschalthysterese (in Minuten)</label>
+                        <input type="number" id="heating_hysteresisOnMin" name="hysteresisOnMin" min="0" max="1440" step="1">
+
+                        <label data-t="t.ausschalthysterese_in_minuten" for="heating_hysteresisOffMin">Ausschalthysterese (in Minuten)</label>
+                        <input type="number" id="heating_hysteresisOffMin" name="hysteresisOffMin" min="0" max="1440" step="1">
+                    </div>
+
+                    <button data-t="common.save" class="btn" type="submit">Speichern</button>
+                </fieldset>
+            </form>
+        </div>
+
+        <!-- Licht und Lüftung sind vorübergehend ausgeblendet (kommen wieder). Zum Einblenden
+             die Kommentarzeichen um die beiden Panels entfernen und die beiden Einträge in
+             CONTROLS im Skript unten wieder aktivieren. -->
+        <!--
+         Licht: Schaltausgänge und Dimmer 
+        <div class="panel" id="ctl_light" data-control="light">
+            <div class="panel-head"><h2 data-t="t.licht">Licht</h2><span data-state></span></div>
+            <p data-t="t.schaltet_licht_ein_wenn_es_dunkel" class="sub">Schaltet Licht ein, wenn es dunkel ist und jemand im Raum ist.</p>
+
+            <div class="tile-rows">
+                <div class="row">
+                    <span class="row-title">BH1750</span>
+                    <span class="row-content" data-status="bh1750"></span>
+                </div>
+                <div class="row">
+                    <span class="row-title">LD2410</span>
+                    <span class="row-content" data-status="ld2410"></span>
+                </div>
+            </div>
+            <div class="msgbox warn" data-missing hidden></div>
+
+            <form>
+                <fieldset class="ctl-fields" disabled>
+                    <label class="check"><input type="checkbox" name="enabled"> <span data-t="t.lichtsteuerung_einschalten">Lichtsteuerung einschalten</span></label>
+
+                    <label data-t="t.ausgaenge">Ausg&auml;nge</label>
+                    <div data-outputs></div>
+                    <p class="sub" data-outputs-hint></p>
+                    <button data-t="t.ausgang_hinzufuegen" class="btn-ghost" type="button" data-add-output>+&nbsp;&nbsp;Ausgang hinzuf&uuml;gen</button>
+
+                    <label data-t="t.einschaltschwelle_in_lux" for="light_luxThreshold">Einschaltschwelle (in Lux)</label>
+                    <input type="number" id="light_luxThreshold" name="luxThreshold" min="0" max="65535" step="1">
+
+                    <div data-needs-dimmer hidden>
+                        <label data-t="t.helligkeit_in" for="light_brightnessPct">Helligkeit (in %)</label>
+                        <input type="number" id="light_brightnessPct" name="brightnessPct" min="1" max="100" step="1">
+
+                        <label data-t="t.einblenden_in_sekunden" for="light_fadeSeconds">Einblenden (in Sekunden)</label>
+                        <input type="number" id="light_fadeSeconds" name="fadeSeconds" min="0" max="60" step="1">
+                    </div>
+                    <p data-t="t.helligkeit_und_einblenden_gibt_es_sobald" class="sub" data-dimmer-hint style="margin-top:12px">Helligkeit und Einblenden gibt es,
+                        sobald ein Dimmer als Ausgang gew&auml;hlt ist. Schaltausg&auml;nge gehen nur an und aus.</p>
+
+                    <button data-t="common.save" class="btn" type="submit">Speichern</button>
+                </fieldset>
+            </form>
+        </div>
+
+         Lüftung: nur Schaltausgänge 
+        <div class="panel" id="ctl_ventilation" data-control="ventilation">
+            <div class="panel-head"><h2 data-t="t.lueftung">L&uuml;ftung</h2><span data-state></span></div>
+            <p data-t="t.schaltet_die_lueftung_bei_schlechter_luft" class="sub">Schaltet die L&uuml;ftung bei schlechter Luft oder hoher Luftfeuchte.
+                F&uuml;r die Luftqualit&auml;t gen&uuml;gt einer der beiden Sensoren ENS160 und SCD40.</p>
+
+            <div class="tile-rows">
+                <div class="row">
+                    <span class="row-title">SHT41</span>
+                    <span class="row-content" data-status="sht41"></span>
+                </div>
+                <div class="row">
+                    <span class="row-title">ENS160</span>
+                    <span class="row-content" data-status="ens160"></span>
+                </div>
+                <div class="row">
+                    <span class="row-title">SCD40</span>
+                    <span class="row-content" data-status="scd40"></span>
+                </div>
+            </div>
+            <div class="msgbox warn" data-missing hidden></div>
+
+            <form>
+                <fieldset class="ctl-fields" disabled>
+                    <label class="check"><input type="checkbox" name="enabled"> <span data-t="t.lueftungssteuerung_einschalten">L&uuml;ftungssteuerung einschalten</span></label>
+
+                    <label data-t="t.ausgaenge">Ausg&auml;nge</label>
+                    <div data-outputs></div>
+                    <p class="sub" data-outputs-hint></p>
+                    <button data-t="t.ausgang_hinzufuegen" class="btn-ghost" type="button" data-add-output>+&nbsp;&nbsp;Ausgang hinzuf&uuml;gen</button>
+
+                    <label data-t="t.einschaltschwelle_luftqualitaet_stufe_1_bis_5" for="ventilation_aqiThreshold">Einschaltschwelle Luftqualit&auml;t (Stufe 1 bis 5)</label>
+                    <input type="number" id="ventilation_aqiThreshold" name="aqiThreshold" min="1" max="5" step="1">
+
+                    <label data-t="t.einschaltschwelle_luftfeuchte_in" for="ventilation_humidityThreshold">Einschaltschwelle Luftfeuchte (in %)</label>
+                    <input type="number" id="ventilation_humidityThreshold" name="humidityThreshold" min="0" max="100" step="1">
+
+                    <button data-t="common.save" class="btn" type="submit">Speichern</button>
+                </fieldset>
+            </form>
+        </div>
+        -->
+
+    </main>
+</div>
+
+<script src="js/lang-de.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    /* Was jeder Regelkreis braucht.
+     *   kinds  Einsatzarten der Shellys (siehe Verbindungen), die als Ausgang taugen. Ein Rollo
+     *          kann nichts ein- und ausschalten, ein Shelly ohne gewählte Art ist unbekannt.
+     *   needs  Sensoren, UND-verknüpft; jede Gruppe darin ODER-verknüpft. Die Lüftung braucht
+     *          also den SHT41 und mindestens einen der beiden Luftqualitätssensoren.
+     *   fields Zahlenfelder des Regelkreises, Name wie in der Konfiguration. Grenzen stehen im
+     *          HTML (min/max), dort prüft auch dieses Skript. */
+    const CONTROLS = {
+        heating: {
+            title: I18n.t('js.control.heating'),
+            kinds: ['switch1', 'switch2'],
+            needs: [['sht41']]
+        }
+        /* Licht und Lüftung sind vorübergehend ausgeblendet (Panels im HTML auskommentiert).
+        light: {
+            title: I18n.t('js.control.light'),
+            kinds: ['switch1', 'switch2', 'dimmer'],
+            needs: [['bh1750'], ['ld2410']]
+        },
+        ventilation: {
+            title: I18n.t('js.control.ventilation'),
+            kinds: ['switch1', 'switch2'],
+            needs: [['sht41'], ['ens160', 'scd40']]
+        }
+        */
+    };
+
+    const SENSOR_NAMES = {
+        bh1750: 'BH1750', sht41: 'SHT41', scd40: 'SCD40', ens160: 'ENS160', ld2410: 'LD2410'
+    };
+
+    const KIND_NAMES = {
+        switch1: I18n.t('shelly.kind.switch1'), switch2: I18n.t('shelly.kind.switch2'),
+        dimmer: I18n.t('shelly.kind.dimmer'), cover: I18n.t('shelly.kind.cover')
+    };
+
+    let config  = { shellys: [], controls: {} };
+    let sensors = null;                 /* null, bis die erste Antwort da ist */
+    let maxOutputs = 8;
+    let maxChannels = 2;
+
+    const panels = {};                  /* Name -> Bestandteile des Panels */
+
+    /* ---------- Shellys ---------- */
+
+    /* Ein Ausgang benennt seinen Shelly über dessen MAC, nicht über die IP: Die IP vergibt der
+     * Router und kann wechseln, die MAC gehört zum Gerät. Ältere Konfigurationen und Geräte
+     * ohne bekannte MAC haben noch die Adresse; die gilt ersatzweise. */
+    function normalizeMac(mac) {
+        return String(mac || '').toUpperCase().replace(/[^0-9A-F]/g, '');
+    }
+
+    function shellyByKey(key) {
+        const mac = normalizeMac(key);
+        return config.shellys.find(function (s) { return mac !== '' && normalizeMac(s.mac) === mac; })
+            || config.shellys.find(function (s) { return s.address === key; })
+            || null;
+    }
+
+    /* Der Schlüssel, unter dem ein Ausgang diesen Shelly speichert. */
+    function shellyKey(shelly) {
+        return normalizeMac(shelly.mac);
+    }
+
+    /* Als Ausgang taugt ein Shelly nur mit passender Art und bekannter MAC. Ohne MAC ließe er
+     * sich nach einer neuen IP nicht wiederfinden; sie wird unter Verbindungen beim Erkennen
+     * des Geräts ermittelt. */
+    function eligibleShellys(name) {
+        return config.shellys.filter(function (s) {
+            return CONTROLS[name].kinds.indexOf(s.kind) !== -1 && shellyKey(s) !== '';
+        });
+    }
+
+    /* Ein Shelly 2.5 oder 2PM hat zwei Kanäle, alles andere hier einen. */
+    function channelCount(shelly) {
+        if (!shelly) return 1;
+        return Math.min(shelly.kind === 'switch2' ? 2 : 1, maxChannels);
+    }
+
+    function shellyLabel(shelly) {
+        return (shelly.name || shelly.address) + ' – ' + (KIND_NAMES[shelly.kind] || I18n.t('js.control.kind_open'));
+    }
+
+    /* ---------- Sensoren ---------- */
+
+    function sensorPresent(key) {
+        const s = sensors && sensors[key];
+        return !!(s && s.enabled && s.connected);
+    }
+
+    /* Liefert die Gruppen, in denen kein Sensor da ist, als lesbaren Text je Gruppe. */
+    function missingGroups(name) {
+        return CONTROLS[name].needs.filter(function (group) {
+            return !group.some(sensorPresent);
+        }).map(function (group) {
+            return group.map(function (key) { return SENSOR_NAMES[key]; }).join(I18n.t('js.control.or'));
+        });
+    }
+
+    /* ---------- Ausgänge ---------- */
+
+    function outputRows(panel) {
+        return Array.from(panel.outputsEl.querySelectorAll('.output-row'));
+    }
+
+    function readOutputs(panel) {
+        return outputRows(panel).map(function (row) {
+            return {
+                shelly:  row.querySelector('[data-shelly]').value,
+                channel: Number(row.querySelector('[data-channel]').value)
+            };
+        });
+    }
+
+    function fillChannels(row, keepChannel) {
+        const shelly = shellyByKey(row.querySelector('[data-shelly]').value);
+        const select = row.querySelector('[data-channel]');
+        const count  = Math.max(channelCount(shelly), keepChannel + 1);
+
+        select.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const option = document.createElement('option');
+            option.value = String(i);
+            option.textContent = I18n.t('js.control.channel', { n: i + 1 });
+            select.appendChild(option);
+        }
+        select.value = String(Math.min(keepChannel, count - 1));
+        select.disabled = count < 2;
+    }
+
+    /* Erste Kombination aus Shelly und Kanal, die dieser Regelkreis noch nicht benutzt. */
+    function firstFreeOutput(name, panel) {
+        const used = readOutputs(panel);
+        const shellys = eligibleShellys(name);
+        for (let i = 0; i < shellys.length; i++) {
+            for (let ch = 0; ch < channelCount(shellys[i]); ch++) {
+                const taken = used.some(function (u) {
+                    const same = shellyByKey(u.shelly);
+                    return same === shellys[i] && u.channel === ch;
+                });
+                if (!taken) return { shelly: shellyKey(shellys[i]), channel: ch };
+            }
+        }
+        return null;
+    }
+
+    function updatePanel(name) {
+        const panel = panels[name];
+        const rows = outputRows(panel);
+        const eligible = eligibleShellys(name);
+
+        panel.addButton.disabled = rows.length >= maxOutputs || firstFreeOutput(name, panel) === null;
+
+        /* Helligkeit und Einblenden gibt es nur an Dimmern. */
+        if (panel.dimmerFields) {
+            const hasDimmer = readOutputs(panel).some(function (o) {
+                const s = shellyByKey(o.shelly);
+                return s && s.kind === 'dimmer';
+            });
+            panel.dimmerFields.hidden = !hasDimmer;
+            panel.dimmerHint.hidden = hasDimmer;
+        }
+
+        const unusable = config.shellys.length - eligible.length;
+        let hint = '';
+        if (eligible.length === 0) {
+            hint = I18n.t('js.control.no_shelly');
+        } else if (rows.length === 0) {
+            hint = I18n.t('js.control.no_output');
+        } else {
+            hint = I18n.plural('js.control.outputs_of_max', rows.length, { max: maxOutputs });
+        }
+        if (unusable > 0 && eligible.length > 0) {
+            hint += ' ' + I18n.plural('js.control.unusable', unusable);
+        }
+        panel.outputsHint.innerHTML = hint;
+    }
+
+    function addOutputRow(name, output) {
+        const panel = panels[name];
+        const eligible = eligibleShellys(name);
+
+        const row = document.createElement('div');
+        row.className = 'output-row';
+
+        const shellySelect = document.createElement('select');
+        shellySelect.dataset.shelly = '';
+        shellySelect.setAttribute('aria-label', I18n.t('js.control.shelly'));
+        eligible.forEach(function (s) {
+            const option = document.createElement('option');
+            option.value = shellyKey(s);
+            option.textContent = shellyLabel(s);
+            shellySelect.appendChild(option);
+        });
+
+        /* Gespeicherter Ausgang, dessen Shelly es nicht mehr gibt oder der hier nicht mehr
+         * taugt: sichtbar lassen und kennzeichnen, statt ihn still zu verschlucken. */
+        const current = shellyByKey(output.shelly);
+        if (!current || eligible.indexOf(current) === -1) {
+            const option = document.createElement('option');
+            option.value = output.shelly;
+            option.textContent = I18n.t('js.control.unavailable', {
+                name: current ? (current.name || current.address) : output.shelly
+            });
+            shellySelect.appendChild(option);
+            row.classList.add('stale');
+            shellySelect.value = output.shelly;
+        } else {
+            shellySelect.value = shellyKey(current);
+        }
+
+        const channelSelect = document.createElement('select');
+        channelSelect.dataset.channel = '';
+        channelSelect.setAttribute('aria-label', I18n.t('js.control.channel', { n: '' }).trim());
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'grid-remove';
+        remove.textContent = '×';
+        remove.setAttribute('aria-label', I18n.t('js.control.remove_output'));
+
+        row.appendChild(shellySelect);
+        row.appendChild(channelSelect);
+        row.appendChild(remove);
+        panel.outputsEl.appendChild(row);
+
+        fillChannels(row, output.channel);
+
+        shellySelect.addEventListener('change', function () {
+            row.classList.remove('stale');
+            fillChannels(row, 0);
+            updatePanel(name);
+        });
+        channelSelect.addEventListener('change', function () { updatePanel(name); });
+        remove.addEventListener('click', function () {
+            row.remove();
+            updatePanel(name);
+        });
+    }
+
+    /* ---------- Anzeige ---------- */
+
+    function renderState(name) {
+        const panel = panels[name];
+        const missing = missingGroups(name);
+        const saved = (config.controls && config.controls[name]) || {};
+
+        let badge;
+        if (sensors === null) {
+            badge = SensorView.badge(I18n.t('js.control.checking'), 'muted');
+        } else if (missing.length > 0) {
+            badge = SensorView.badge(I18n.t('js.control.sensors_missing'), 'err');
+        } else {
+            badge = saved.enabled ? SensorView.badge(I18n.t('js.control.on'), 'ok')
+                                  : SensorView.badge(I18n.t('js.control.off'), 'muted');
+        }
+        panel.stateEl.innerHTML = badge;
+
+        if (sensors !== null && missing.length > 0) {
+            panel.missingEl.textContent = I18n.t('js.control.missing_text', { list: missing.join('; ') });
+            panel.missingEl.hidden = false;
+        } else {
+            panel.missingEl.hidden = true;
+        }
+
+        panel.fieldset.disabled = sensors === null || missing.length > 0;
+    }
+
+    /* Felder, die es nur bei eingeschalteter Steuerung gibt (data-when-enabled). Folgt dem
+     * Haken, nicht dem gespeicherten Stand: Wer einschaltet, sieht die Felder sofort. */
+    function renderEnabledFields(name) {
+        const panel = panels[name];
+        const on = panel.form.elements.enabled.checked;
+        panel.el.querySelectorAll('[data-when-enabled]').forEach(function (el) { el.hidden = !on; });
+    }
+
+    function fillPanel(name) {
+        const panel = panels[name];
+        const saved = (config.controls && config.controls[name]) || {};
+
+        panel.form.elements.enabled.checked = !!saved.enabled;
+        panel.numberInputs.forEach(function (input) {
+            if (saved[input.name] !== undefined) input.value = saved[input.name];
+        });
+
+        panel.outputsEl.innerHTML = '';
+        (saved.outputs || []).forEach(function (output) { addOutputRow(name, output); });
+        updatePanel(name);
+        renderState(name);
+        renderEnabledFields(name);
+    }
+
+    /* ---------- Speichern ---------- */
+
+    /* Liest die Zahlenfelder. Bei einem Fehler wird gemeldet und null geliefert. */
+    function readNumbers(panel) {
+        const values = {};
+        for (let i = 0; i < panel.numberInputs.length; i++) {
+            const input = panel.numberInputs[i];
+            const label = input.labels && input.labels[0] ? input.labels[0].textContent : input.name;
+            const text = input.value.trim().replace(',', '.');
+            const value = Number(text);
+            const min = Number(input.min);
+            const max = Number(input.max);
+            /* Felder mit Nachkommastelle (step="0.5") nehmen jede Zahl im Bereich, die anderen nur ganze. */
+            const decimal = input.step.indexOf('.') !== -1;
+            if (text === '' || !Number.isFinite(value) || (!decimal && !Number.isInteger(value)) || value < min || value > max) {
+                Toast.error(I18n.t('js.control.int_required', { label: label, min: min, max: max }));
+                input.focus();
+                return null;
+            }
+            values[input.name] = decimal ? Math.round(value * 10) / 10 : value;
+        }
+        return values;
+    }
+
+    /* Ein Kanal darf nur von einem Regelkreis geschaltet werden, sonst arbeiten zwei gegeneinander. */
+    function conflictWith(name, outputs) {
+        const others = Object.keys(CONTROLS).filter(function (n) { return n !== name; });
+        for (let i = 0; i < others.length; i++) {
+            const theirs = (config.controls[others[i]] || {}).outputs || [];
+            for (let j = 0; j < outputs.length; j++) {
+                const mine = shellyByKey(outputs[j].shelly);
+                const clash = theirs.some(function (t) {
+                    const same = mine ? shellyByKey(t.shelly) === mine : t.shelly === outputs[j].shelly;
+                    return same && t.channel === outputs[j].channel;
+                });
+                if (clash) {
+                    return I18n.t('js.control.channel_taken', {
+                        name: mine ? (mine.name || mine.address) : outputs[j].shelly,
+                        channel: outputs[j].channel + 1,
+                        control: CONTROLS[others[i]].title
+                    });
+                }
+            }
+        }
+        return null;
+    }
+
+    async function save(name) {
+        const panel = panels[name];
+
+        const numbers = readNumbers(panel);
+        if (numbers === null) return;
+
+        const outputs = readOutputs(panel);
+        const enabled = panel.form.elements.enabled.checked;
+
+        if (enabled && outputs.length === 0) {
+            Toast.error(I18n.t('js.control.need_output'));
+            return;
+        }
+        const clash = conflictWith(name, outputs);
+        if (clash) {
+            Toast.error(clash);
+            return;
+        }
+
+        const patch = Object.assign({ enabled: enabled, outputs: outputs }, numbers);
+        const button = panel.form.querySelector('button[type=submit]');
+        const label = button.textContent;
+        button.disabled = true;
+        button.textContent = I18n.t('common.saving');
+        try {
+            const body = { controls: {} };
+            body.controls[name] = patch;
+            await Api.request('/api/config', { method: 'POST', body: JSON.stringify(body) });
+            config.controls[name] = patch;
+            renderState(name);
+            Toast.ok(I18n.t('js.control.saved', { title: CONTROLS[name].title }));
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            Toast.error(I18n.t('common.save_failed', { message: error.message }));
+        } finally {
+            button.disabled = false;
+            button.textContent = label;
+        }
+    }
+
+    /* ---------- Start ---------- */
+
+    Object.keys(CONTROLS).forEach(function (name) {
+        const el = document.getElementById('ctl_' + name);
+        const form = el.querySelector('form');
+        panels[name] = {
+            el: el,
+            form: form,
+            fieldset: el.querySelector('fieldset'),
+            stateEl: el.querySelector('[data-state]'),
+            missingEl: el.querySelector('[data-missing]'),
+            outputsEl: el.querySelector('[data-outputs]'),
+            outputsHint: el.querySelector('[data-outputs-hint]'),
+            addButton: el.querySelector('[data-add-output]'),
+            dimmerFields: el.querySelector('[data-needs-dimmer]'),
+            dimmerHint: el.querySelector('[data-dimmer-hint]'),
+            numberInputs: Array.from(form.querySelectorAll('input[type=number]')),
+            view: SensorView.create(el)
+        };
+
+        panels[name].addButton.addEventListener('click', function () {
+            const free = firstFreeOutput(name, panels[name]);
+            if (free) addOutputRow(name, free);
+            updatePanel(name);
+        });
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            save(name);
+        });
+        form.elements.enabled.addEventListener('change', function () { renderEnabledFields(name); });
+    });
+
+    function renderSensors() {
+        Object.keys(panels).forEach(function (name) {
+            panels[name].view.render(sensors);
+            renderState(name);
+        });
+    }
+
+    Api.config().then(function (data) {
+        config = data;
+        config.shellys = config.shellys || [];
+        config.controls = config.controls || {};
+        maxOutputs  = (data.limits && data.limits.controlOutputs) || maxOutputs;
+        maxChannels = (data.limits && data.limits.shellyChannels) || maxChannels;
+        if (data.limits && data.limits.heatingTargetMin !== undefined) {
+            const target = document.getElementById('heating_targetTemp');
+            target.min = String(data.limits.heatingTargetMin);
+            target.max = String(data.limits.heatingTargetMax);
+        }
+
+        Object.keys(panels).forEach(fillPanel);
+
+        /* Die Sensoren erst jetzt abfragen und weiter beobachten: Wird einer abgezogen, sperrt
+         * sich die Maske von selbst. Eingaben in den Feldern bleiben dabei stehen. */
+        Api.poll(function () {
+            return Api.sensors().then(function (data) {
+                sensors = data;
+                renderSensors();
+            });
+        });
+    }).catch(function (error) {
+        if (error.unauthorized) { Api.toLogin(); return; }
+        Toast.error(I18n.t('error.CONFIG_LOAD_FAILED'));
+    });
+})();
+</script>
+</body>
+</html>

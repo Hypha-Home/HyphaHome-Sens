@@ -1,0 +1,97 @@
+<!-- pwreset.html — Passwort vergessen. Route: GET /pwreset (ohne Anmeldung erreichbar)
+     Liest die Restzeit einer laufenden Freigabe ueber GET /api/pwreset und erteilt sie mit
+     POST /api/pwreset. Beide Ansichten (Erklaerung, Freigabe erteilt) liegen in dieser Datei. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- I18N_LOADER: Bei einer anderen Sprache als Deutsch das Woerterbuch vor dem Zeichnen laden
+         und den Inhalt bis zum Ersetzen der Texte verbergen. Die Liste der Sprachen steht hier
+         und in nichts sonst; eine neue Sprache braucht lang-xx.js und einen Eintrag hier. -->
+    <script>(function(){var l='de';try{l=localStorage.getItem('hyphahome-sens.lang')||(navigator.language||'de').slice(0,2).toLowerCase();}catch(e){}
+    if(['en'].indexOf(l)>=0){document.documentElement.className+=' i18n-wait';document.write('<script src="'+(location.protocol==='file:'?'':'/')+'js/lang-'+l+'.js"><\/script>');}})();</script>
+    <style>.i18n-wait body{visibility:hidden}</style>
+    <title data-t="t.hypha_home_sens_passwort_zuruecksetzen">Hypha Home - Sens &ndash; Passwort zur&uuml;cksetzen</title>
+    <script>(function(){var t=null;try{t=localStorage.getItem('hyphahome-sens.theme');}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();</script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="images/logo-dunkel.svg">
+    <link rel="icon" type="image/svg+xml" href="images/logo-hell.svg" media="(prefers-color-scheme: dark)">
+</head>
+<body class="auth">
+    <div class="card" id="viewAsk">
+        <span class="auth-logo"><img class="logo-for-light" src="images/logo-dunkel.svg" alt="Hypha-Home"><img class="logo-for-dark" src="images/logo-hell.svg" alt=""></span>
+        <h1data-t="t.passwort_zuruecksetzen">&#128273; Passwort zur&uuml;cksetzen</h1>
+        <p data-t="t.falls_sie_das_geraetepasswort_vergessen_haben" class="sub">Falls Sie das Ger&auml;tepasswort vergessen haben.</p>
+
+        <div class="msgbox err" id="error" hidden></div>
+        <div class="msgbox ok" id="running" hidden></div>
+
+        <ol>
+            <li data-t="t.bestaetigen_sie_unten_das_zuruecksetzen_das">Best&auml;tigen Sie unten das Zur&uuml;cksetzen. Das Ger&auml;t gibt es daraufhin f&uuml;r 5 Minuten frei.</li>
+            <li data-t="t.starten_sie_das_geraet_innerhalb_dieser">Starten Sie das Ger&auml;t innerhalb dieser 5 Minuten neu, z.&nbsp;B. indem Sie die Stromversorgung trennen und wieder anschlie&szlig;en.</li>
+            <li data-t="t.beim_start_wird_das_passwort_geloescht">Beim Start wird das Passwort gel&ouml;scht. Es gibt kein Standardpasswort, das Passwortfeld bleibt leer.</li>
+            <li data-t="t.melden_sie_sich_mit_leerem_passwortfeld">Melden Sie sich mit leerem Passwortfeld an und vergeben Sie unter Einstellungen ein neues Ger&auml;tepasswort.</li>
+        </ol>
+
+        <div data-t="t.erfolgt_innerhalb_von_5_minuten_kein" class="msgbox warn">
+            Erfolgt innerhalb von 5 Minuten kein Neustart, verf&auml;llt die Freigabe und das Passwort bleibt unver&auml;ndert.
+            Solange kein neues Passwort vergeben ist, kann sich jeder im Netzwerk ohne Passwort anmelden.
+        </div>
+
+        <button data-t="t.zuruecksetzen_freigeben" class="btn btn-red" type="button" id="arm">Zur&uuml;cksetzen freigeben</button>
+        <a data-t="t.zurueck_zur_anmeldung" class="link" href="./login">Zur&uuml;ck zur Anmeldung</a>
+    </div>
+
+    <div class="card" id="viewDone" hidden>
+        <h1 data-t="t.freigabe_erteilt">&#128273; Freigabe erteilt</h1>
+        <p data-t="t.das_passwort_wird_beim_naechsten_start" class="sub">Das Passwort wird beim n&auml;chsten Start gel&ouml;scht.</p>
+
+        <div data-t="t.zuruecksetzen_ist_fuer_5_minuten_freigegeben" class="msgbox ok">&#10003; Zur&uuml;cksetzen ist f&uuml;r 5 Minuten freigegeben.</div>
+
+        <ol>
+            <li data-t="t.starten_sie_das_geraet_jetzt_neu">Starten Sie das Ger&auml;t <b>jetzt</b> neu, z.&nbsp;B. indem Sie die Stromversorgung trennen und wieder anschlie&szlig;en.</li>
+            <li data-t="t.melden_sie_sich_danach_mit_leerem">Melden Sie sich danach mit leerem Passwortfeld an.</li>
+            <li data-t="t.vergeben_sie_unter_einstellungen_ein_neues">Vergeben Sie unter Einstellungen ein neues Ger&auml;tepasswort.</li>
+        </ol>
+
+        <a data-t="t.zur_anmeldung" class="link" href="./login">Zur Anmeldung</a>
+    </div>
+
+    <script src="js/lang-de.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        const viewAsk  = document.getElementById('viewAsk');
+        const viewDone = document.getElementById('viewDone');
+        const running  = document.getElementById('running');
+        const error    = document.getElementById('error');
+        const arm      = document.getElementById('arm');
+
+        Api.request('/api/pwreset').then(function (state) {
+            if (state.remaining > 0) {
+                running.textContent = I18n.t('js.pwreset.armed', { min: Math.ceil(state.remaining / 60) });
+                running.hidden = false;
+            }
+        }).catch(function () { /* Hinweis ist nur Zugabe */ });
+
+        arm.addEventListener('click', async function () {
+            error.hidden = true;
+            arm.disabled = true;
+            try {
+                await Api.request('/api/pwreset', { method: 'POST' });
+                viewAsk.hidden = true;
+                viewDone.hidden = false;
+            } catch (e) {
+                error.textContent = '✗ ' + I18n.t('login.no_connection');
+                error.hidden = false;
+                arm.disabled = false;
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

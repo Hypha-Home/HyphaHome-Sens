@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024" role="img" aria-label="Hypha-Home Logo: ein Pilzgeflecht in der Form eines Hauses mit Schornstein und Tür und einem warm leuchtenden Giebelfenster">
+<title>Hypha-Home</title>
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="256" cy="158" r="62" fill="#e48a14" stroke="none" opacity="0.12"/>
+<circle cx="256" cy="158" r="40" fill="#e48a14" stroke="none" opacity="0.2"/>
+<g stroke="#1e3b30" stroke-width="3.5" opacity="0.85">
+<path d="M256 80 C258 100 254 118 256 135"/>
+<path d="M256 181 C258 220 254 262 256 304"/>
+<path d="M233 158 C214 160 190 158 169 153"/>
+<path d="M279 158 C298 160 322 158 343 153"/>
+<path d="M124 300 C158 300 196 314 222 338"/>
+<path d="M388 300 C354 300 316 314 290 338"/>
+</g>
+<g stroke="#1e3b30" stroke-width="7">
+<path d="M88 222 C130 186 205 122 256 80"/>
+<path d="M256 80 C307 122 382 186 424 222"/>
+<path d="M125 191 C121 250 123 330 124 392"/>
+<path d="M387 191 C391 250 389 330 388 392"/>
+<path d="M124 392 C190 402 322 402 388 392"/>
+</g>
+<g stroke="#1e3b30" stroke-width="5">
+<path d="M222 399 C221 380 223 360 222 338 C222 292 290 292 290 338 C289 360 291 380 290 399"/>
+<path d="M326 138 C327 124 325 112 326 100 C336 97 349 103 358 100 C359 122 357 148 358 169"/>
+</g>
+<circle cx="256" cy="158" r="23" stroke="#1e3b30" stroke-width="4"/>
+<g stroke="#3d8a6e" stroke-width="2.5">
+<path d="M256 80 C257 70 254 60 256 52"/>
+<path d="M88 222 C76 220 64 212 54 198"/>
+<path d="M88 222 C76 236 70 250 68 264"/>
+<path d="M424 222 C436 220 448 212 458 198"/>
+<path d="M424 222 C436 236 442 250 444 264"/>
+<path d="M124 392 C108 396 94 392 86 380"/>
+<path d="M388 392 C404 396 418 392 426 380"/>
+<path d="M256 402 C256 414 252 424 256 434"/>
+<path d="M190 400 C189 410 184 419 182 428"/>
+<path d="M322 400 C323 410 328 419 330 428"/>
+<path d="M124 300 C110 305 100 316 96 328"/>
+<path d="M388 300 C402 305 412 316 416 328"/>
+<path d="M169 153 C158 146 150 136 148 124"/>
+<path d="M342 100 C340 90 346 80 342 70"/>
+<path d="M256 250 C244 245 236 237 232 227"/>
+<path d="M256 250 C268 245 276 237 280 227"/>
+</g>
+<g fill="#3d8a6e" stroke="none">
+<circle cx="256" cy="52" r="4"/>
+<circle cx="54" cy="198" r="4"/>
+<circle cx="68" cy="264" r="4"/>
+<circle cx="458" cy="198" r="4"/>
+<circle cx="444" cy="264" r="4"/>
+<circle cx="86" cy="380" r="4"/>
+<circle cx="426" cy="380" r="4"/>
+<circle cx="256" cy="434" r="4"/>
+<circle cx="182" cy="428" r="4"/>
+<circle cx="330" cy="428" r="4"/>
+<circle cx="96" cy="328" r="4"/>
+<circle cx="416" cy="328" r="4"/>
+<circle cx="148" cy="124" r="4"/>
+<circle cx="342" cy="70" r="4"/>
+<circle cx="232" cy="227" r="4"/>
+<circle cx="280" cy="227" r="4"/>
+</g>
+<g fill="#1e3b30" stroke="none">
+<circle cx="256" cy="80" r="11"/>
+<circle cx="88" cy="222" r="11"/>
+<circle cx="424" cy="222" r="11"/>
+<circle cx="124" cy="392" r="11"/>
+<circle cx="388" cy="392" r="11"/>
+<circle cx="125" cy="191" r="6"/>
+<circle cx="387" cy="191" r="6"/>
+<circle cx="222" cy="399" r="6"/>
+<circle cx="290" cy="399" r="6"/>
+<circle cx="326" cy="100" r="6"/>
+<circle cx="358" cy="100" r="6"/>
+<circle cx="169" cy="153" r="4.5"/>
+<circle cx="343" cy="153" r="4.5"/>
+<circle cx="124" cy="300" r="4.5"/>
+<circle cx="388" cy="300" r="4.5"/>
+<circle cx="256" cy="250" r="4.5"/>
+<circle cx="256" cy="304" r="4.5"/>
+</g>
+<circle cx="256" cy="158" r="13" fill="#e48a14" stroke="none"/>
+</g>
+</svg>

@@ -1,0 +1,440 @@
+<!-- index.html — Startseite (Dashboard). Route: GET /
+
+     Drei Kacheln: Sensorstatus, Verbindungen, System. Alles kommt aus einem einzigen Aufruf,
+     GET /api/dashboard — der Webserver bedient nur eine Verbindung gleichzeitig, mehrere
+     Aufrufe je Abfrage würden sich gegenseitig ausbremsen.
+
+     Die Sensorstatus-Abzeichen nutzen dieselbe Darstellung wie sensors.html (SensorView aus
+     ui.js, Attribut data-status). Alles andere wird unten im Skript eingesetzt. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- I18N_LOADER: Bei einer anderen Sprache als Deutsch das Woerterbuch vor dem Zeichnen laden
+         und den Inhalt bis zum Ersetzen der Texte verbergen. Die Liste der Sprachen steht hier
+         und in nichts sonst; eine neue Sprache braucht lang-xx.js und einen Eintrag hier. -->
+    <script>(function(){var l='de';try{l=localStorage.getItem('hyphahome-sens.lang')||(navigator.language||'de').slice(0,2).toLowerCase();}catch(e){}
+    if(['en'].indexOf(l)>=0){document.documentElement.className+=' i18n-wait';document.write('<script src="'+(location.protocol==='file:'?'':'/')+'js/lang-'+l+'.js"><\/script>');}})();</script>
+    <style>.i18n-wait body{visibility:hidden}</style>
+    <title data-t="t.hypha_home_sens_startseite">Hypha Home - Sens &ndash; Startseite</title>
+    <script>(function(){var t=null;try{t=localStorage.getItem('hyphahome-sens.theme');}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();</script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="images/logo-dunkel.svg">
+    <link rel="icon" type="image/svg+xml" href="images/logo-hell.svg" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<div class="app">
+
+    <nav class="sidebar">
+        <div class="brand">
+            <span class="brand-logo"><img class="logo-for-light" src="images/logo-dunkel.svg" alt="Hypha-Home"><img class="logo-for-dark" src="images/logo-hell.svg" alt=""></span>
+            <div>
+                <div class="brand-title">Hypha Home - Sens</div>
+                <div class="brand-sub">by EideardVMR</div>
+            </div>
+        </div>
+        <ul class="nav">
+            <li><a href="./" class="active"><span data-t="nav.home">Startseite</span></a></li>
+            <li><a href="./connections"><span data-t="nav.connections">Verbindungen</span></a></li>
+            <li><a href="./sensors"><span data-t="nav.sensors">Sensoren</span></a></li>
+            <li><a href="./control"><span data-t="nav.control">Steuerung</span></a></li>
+            <li><a href="./settings"><span data-t="nav.settings">Einstellungen</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a data-t="nav.logout" href="./logout">Abmelden</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="page-head">
+            <div>
+                <h1 data-t="nav.home" id="deviceName">Startseite</h1>
+                <p data-t="t.lade" class="sub" id="pollState">Lade&hellip;</p>
+            </div>
+            <button type="button" class="theme-toggle" id="themeToggle" data-t-attr="title:t.design_umschalten;aria-label:t.design_umschalten" title="Design umschalten" aria-label="Design umschalten"></button>
+        </div>
+
+        <div class="tiles">
+
+            <div class="tile">
+                <div data-t="nav.sensors">Projekt</div>
+                <p data-t="t.zustand_der_angeschlossenen_sensoren" class="sub"></p>
+                <a href="https://github.com/Hypha-Home" target="github">
+                    <img class="logo-for-dark w200" src="images/logo-hell.svg" alt="">
+                    <img class="logo-for-light w200" src="images/logo-dunkel.svg" alt="">
+                    <h3 style="text-align: center;">Hypha Home - Sens</h3>
+                </a>
+            </div>
+
+            <div class="tile">
+                <div data-t="nav.sensors">Sensoren</div>
+                <p data-t="t.zustand_der_angeschlossenen_sensoren" class="sub">Zustand der angeschlossenen Sensoren</p>
+                <div class="tile-rows">
+                    <div class="row"><span data-t="t.bh1750_licht" class="row-title">BH1750 (Licht)</span><span data-status="bh1750"></span></div>
+                    <div class="row"><span data-t="t.sht41_klima" class="row-title">SHT41 (Klima)</span><span data-status="sht41"></span></div>
+                    <div class="row"><span class="row-title">SCD40 (CO2)</span><span data-status="scd40"></span></div>
+                    <div class="row"><span data-t="t.aht21_klima" class="row-title">AHT21 (Klima)</span><span data-status="aht21"></span></div>
+                    <div class="row"><span data-t="t.ens160_luftqualitaet" class="row-title">ENS160 (Luftqualit&auml;t)</span><span data-status="ens160"></span></div>
+                    <div class="row"><span data-t="t.ld2410_radar" class="row-title">LD2410 (Radar)</span><span data-status="ld2410"></span></div>
+                    <div class="row"><a data-t="t.alle_messwerte" href="./sensors">Alle Messwerte</a></div>
+                </div>
+            </div>
+
+            <div class="tile">
+                <div data-t="nav.connections">Verbindungen</div>
+                <p data-t="t.netzwerk_und_angebundene_geraete" class="sub">Netzwerk und angebundene Ger&auml;te</p>
+                <div class="tile-rows">
+                    <div class="row"><span class="row-title">WLAN</span><span id="wlanState"></span></div>
+                    <div class="row"><span data-t="t.netzwerk" class="row-title">Netzwerk</span><span class="row-content" id="wlanSsid"></span></div>
+                    <div class="row"><span data-t="t.signal" class="row-title">Signal</span><span class="row-content" id="wlanRssi"></span></div>
+                    <div class="row"><span class="row-title">MQTT</span><span id="mqttState"></span></div>
+                    <div class="row"><span data-t="t.broker" class="row-title">Broker</span><span class="row-content" id="mqttBroker"></span></div>
+                    <div class="row"><span data-t="t.shelly_geraete" class="row-title">Shelly-Ger&auml;te</span><span class="row-content" id="shellyUsed"></span></div>
+                    <div class="row"><a data-t="t.verbindungen_konfigurieren" href="./connections">Verbindungen konfigurieren</a></div>
+                </div>
+            </div>
+
+            <div class="tile">
+                <div data-t="t.laufzeit">Laufzeit</div>
+                <p data-t="t.betriebszeit_und_start" class="sub">Betriebszeit und Start</p>
+                <div class="tile-rows">
+                    <div class="row"><span data-t="t.seit_letztem_start" class="row-title">Seit letztem Start</span><span class="row-content" id="uptimeSession"></span></div>
+                    <div class="row"><span data-t="t.gesamtbetriebszeit" class="row-title">Gesamtbetriebszeit</span><span class="row-content" id="uptimeTotal"></span></div>
+                    <div class="row"><span data-t="t.letzter_neustart_durch" class="row-title">Letzter Neustart durch</span><span class="row-content" id="resetReason"></span></div>
+                </div>
+
+                <div data-t="t.hardware">Hardware</div>
+                <p class="sub">ESP32-Info</p>
+                <div class="tile-rows">
+                    <div class="row"><span data-t="t.chip" class="row-title">Chip</span><span class="row-content" id="fwChip"></span></div>
+                    <div class="row"><span data-t="t.takt" class="row-title">Takt</span><span class="row-content" id="fwClock"></span></div>
+                    <!--<div class="row"><span class="row-title">ESP-IDF</span><span class="row-content" id="fwSdk"></span></div>-->
+                    <div class="row"><span data-t="t.arduino_core" class="row-title">Arduino-Core</span><span class="row-content" id="fwCore"></span></div>
+                </div>
+            </div>
+
+            <div class="tile">
+                <div data-t="t.firmware">Firmware</div>
+                <p class="sub" style="margin-bottom: 0;"><span data-t="t.web_ui">Web-UI</span> <span id="slotBadge-webui"></span></p>
+                <div class="tile-rows">
+                    <div class="row">
+                        <span data-t="t.version" class="row-title">Version</span>
+                        <span class="row-content" id="fwVersion-webui"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.name" class="row-title">Name</span>
+                        <span class="row-content" id="fwName-webui"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.hersteller" class="row-title">Hersteller</span>
+                        <span class="row-content" id="fwVendor-webui"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.firmware_mindestens" class="row-title">Firmware mindestens</span>
+                        <span class="row-content" id="fwMinApi-webui"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.firmware_empfohlen" class="row-title">Firmware empfohlen</span>
+                        <span class="row-content" id="fwRecApi-webui"></span>
+                    </div>
+                </div>
+                <p class="sub" style="margin-bottom: 0; margin-top: 24px;">APP-1 <span id="slotBadge-app0"></span></p>
+                <button data-t="t.auf_diese_firmware_wechseln" class="btn-ghost" type="button" id="slotSwitch-app0" hidden>Auf diese Firmware wechseln</button>
+                <div class="tile-rows">
+                    <div class="row">
+                        <span data-t="t.version" class="row-title">Version</span>
+                        <span class="row-content" id="fwVersion-app0"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.build" class="row-title">Build</span>
+                        <span class="row-content" id="fwBuild-app0"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.build_time" class="row-title">Build-time</span>
+                        <span class="row-content" id="fwBuilt-app0"></span>
+                    </div>
+                </div>
+                <p class="sub" style="margin-bottom: 0; margin-top: 24px;">APP-2 <span id="slotBadge-app1"></span></p>
+                <button data-t="t.auf_diese_firmware_wechseln" class="btn-ghost" type="button" id="slotSwitch-app1" hidden>Auf diese Firmware wechseln</button>
+                <div class="tile-rows">
+                    <div class="row">
+                        <span data-t="t.version" class="row-title">Version</span>
+                        <span class="row-content" id="fwVersion-app1"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.build" class="row-title">Build</span>
+                        <span class="row-content" id="fwBuild-app1"></span>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.build_time" class="row-title">Build-time</span>
+                        <span class="row-content" id="fwBuilt-app1"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tile">
+                <div data-t="t.system">System</div>
+                <p data-t="t.zustand_des_geraets" class="sub" id="sysSub">Zustand des Ger&auml;ts</p>
+                <div class="tile-rows">
+                    <div class="row">
+                        <span data-t="t.arbeitsspeicher_belegt" class="row-title">Arbeitsspeicher belegt</span>
+                        <span class="row-content" id="heapText"></span>
+                        <div class="meter" id="heapBar"><i></i></div>
+                    </div>
+                    <div class="row"><span data-t="t.heap_minimum_seit_start" class="row-title">Heap-Minimum seit Start</span><span class="row-content" id="heapMin"></span></div>
+                    <div class="row"><span data-t="t.groesster_freier_block" class="row-title">Gr&ouml;&szlig;ter freier Block</span><span class="row-content" id="heapBlock"></span></div>
+                    <div class="row">
+                        <span data-t="t.speicher_web_ui_belegt" class="row-title">Speicher Web-UI belegt</span>
+                        <span class="row-content" id="fsText"></span>
+                        <div class="meter" id="fsBar"><i></i></div>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.speicher_konfiguration_belegt" class="row-title">Speicher Konfiguration belegt</span>
+                        <span class="row-content" id="cfgText"></span>
+                        <div class="meter" id="cfgBar"><i></i></div>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.firmware_belegt_app_1" class="row-title">Firmware belegt (App-1)</span>
+                        <span class="row-content" id="fwText-app0"></span>
+                        <div class="meter" id="fwBar-app0"><i></i></div>
+                    </div>
+                    <div class="row">
+                        <span data-t="t.firmware_belegt_app_2" class="row-title">Firmware belegt (App-2)</span>
+                        <span class="row-content" id="fwText-app1"></span>
+                        <div class="meter" id="fwBar-app1"><i></i></div>
+                    </div>
+                    <div class="row"><span data-t="t.cpu_temperatur" class="row-title">CPU-Temperatur</span><span class="row-content" id="cpuTemp"></span></div>
+                    <div class="row"><span data-t="t.laufende_tasks" class="row-title">Laufende Tasks</span><span class="row-content" id="tasks"></span></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script src="js/lang-de.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    const EMPTY = SensorView.EMPTY;
+    const NBSP  = SensorView.NBSP;
+    const badge = SensorView.badge;
+
+    const view = SensorView.create();
+
+    function $(id) { return document.getElementById(id); }
+
+    function bytes(n) {
+        if (n === null || n === undefined) return EMPTY;
+        if (n >= 1048576) return (n / 1048576).toFixed(2) + NBSP + 'MB';
+        return (n / 1024).toFixed(1) + NBSP + 'KB';
+    }
+
+    /* "3 Tage, 4 Std. 12 Min." — Sekunden nur, wenn withSeconds gesetzt ist. Die
+     * Gesamtbetriebszeit wird im Gerät nur jede Minute festgeschrieben, eine Sekundenanzeige
+     * wäre genauer als die Datenlage. */
+    function duration(seconds, withSeconds) {
+        const days    = Math.floor(seconds / 86400);
+        const hours   = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+
+        const parts = [];
+        if (days > 0)  parts.push(I18n.plural('js.duration.day', days));
+        if (days > 0 || hours > 0) parts.push(I18n.t('js.duration.hours', { n: hours }));
+        parts.push(I18n.t('js.duration.minutes', { n: minutes }));
+        if (withSeconds && days === 0 && hours === 0) parts.push(I18n.t('js.duration.seconds', { n: seconds % 60 }));
+        return parts.join(', ');
+    }
+
+    /* Füllt Text und Balken. Ab 80 % orange, ab 90 % rot. */
+    function meter(textId, barId, used, total, text) {
+        const bar = $(barId);
+        if (!total) {
+            $(textId).textContent = EMPTY;
+            bar.firstElementChild.style.width = '0';
+            return;
+        }
+        const ratio = used / total;
+        $(textId).textContent = text + ' (' + Math.round(ratio * 100) + ' %)';
+        bar.firstElementChild.style.width = Math.min(100, ratio * 100) + '%';
+        bar.className = 'meter' + (ratio >= 0.9 ? ' err' : ratio >= 0.8 ? ' warn' : '');
+    }
+
+    function set(id, text) { $(id).textContent = text; }
+
+    /* Firmware der beiden App-Plätze. Der laufende Platz zeigt diesen Build, der andere das,
+     * was beim Start in seinem Flash gefunden wurde (leer oder ohne Kennung: Striche). */
+    function renderSlots(s) {
+        const f = s.firmware;
+        const o = s.otherApp;
+
+        ['app0', 'app1'].forEach(function (slot) {
+            const active = slot === s.app.label;
+            let version = EMPTY;
+            let build   = EMPTY;
+            let built   = EMPTY;
+            let size    = 0;
+            let total   = 0;
+
+            if (active) {
+                size    = s.app.firmwareSize;
+                total   = s.app.partitionSize;
+                version = f.version;
+                if (f.build) build = String(f.build);
+                if (f.built) built = f.built + (f.git ? ' (Git ' + f.git + ')' : '');
+            } else if (o.state === 'found') {
+                size    = o.firmwareSize;
+                total   = o.partitionSize;
+                version = o.version;
+                build   = String(o.build);
+                built   = o.built + (o.git ? ' (Git ' + o.git + ')' : '');
+            } else if (o.state === 'unmarked') {
+                size    = o.firmwareSize;
+                total   = o.partitionSize;
+                version = I18n.t('js.index.unknown_version');
+            }
+
+            set('fwVersion-' + slot, version);
+            set('fwBuild-' + slot, build);
+            set('fwBuilt-' + slot, built);
+            meter('fwText-' + slot, 'fwBar-' + slot, size, total, bytes(size) + I18n.t('js.of') + bytes(total));
+            $('slotBadge-' + slot).innerHTML = active ? badge(I18n.t('js.index.active'), 'ok') : badge(I18n.t('js.index.inactive'), 'muted');
+            $('slotSwitch-' + slot).hidden = active || (o.state !== 'found' && o.state !== 'unmarked');
+        });
+    }
+
+    function render(d) {
+        if (d.hostname) {
+            set('deviceName', d.hostname);
+            document.title = d.hostname + I18n.t('js.index.title_suffix');
+        }
+
+        view.render(d.sensors);
+
+        const w = d.wlan;
+        $('wlanState').innerHTML = w.connected ? badge(I18n.t('status.connected'), 'ok')
+                                 : w.hotspot   ? badge(I18n.t('wlan.state.hotspot'), 'warn')
+                                 :               badge(I18n.t('wlan.state.' + w.state), 'err');
+        set('wlanSsid', w.ssid || EMPTY);
+        set('wlanRssi', w.connected ? w.rssi + NBSP + 'dBm' : EMPTY);
+
+        const m = d.mqtt;
+        $('mqttState').innerHTML = !m.configured ? badge(I18n.t('js.index.not_configured'), 'muted')
+                                 : m.connected   ? badge(I18n.t('status.connected'), 'ok')
+                                 :                 badge(I18n.t('wlan.state.disconnected'), 'err');
+        set('mqttBroker', m.configured && m.broker ? m.broker : EMPTY);
+
+        set('shellyUsed', d.shelly.used + ' / ' + d.shelly.max);
+
+        const s = d.system;
+
+        meter('heapText', 'heapBar', s.heap.total - s.heap.free, s.heap.total,
+              bytes(s.heap.total - s.heap.free) + I18n.t('js.of') + bytes(s.heap.total));
+        set('heapMin', bytes(s.heap.minFree) + I18n.t('js.free_suffix'));
+        set('heapBlock', bytes(s.heap.maxBlock));
+
+        meter('fsText', 'fsBar', s.fs.used, s.fs.total,
+              bytes(s.fs.used) + I18n.t('js.of') + bytes(s.fs.total));
+        meter('cfgText', 'cfgBar', s.configFs.used, s.configFs.total,
+              bytes(s.configFs.used) + I18n.t('js.of') + bytes(s.configFs.total));
+
+        renderSlots(s);
+
+        const u = s.webui;
+        set('fwVersion-webui', u.version || EMPTY);
+        set('fwName-webui', u.name || EMPTY);
+        set('fwMinApi-webui', u.minApi || EMPTY);
+        set('fwRecApi-webui', u.recommendedApi || EMPTY);
+        /* Der Hersteller ist ein Link, aber nur bei http(s): Der Wert stammt aus einer Datei,
+         * die jeder mit einer eigenen Web-UI mitliefern kann. */
+        const vendorCell = $('fwVendor-webui');
+        vendorCell.textContent = u.vendor || EMPTY;
+        if (u.vendor && /^https?:\/\//i.test(u.link || '')) {
+            const anchor = document.createElement('a');
+            anchor.href = u.link;
+            anchor.target = '_blank';
+            anchor.rel = 'noopener noreferrer';
+            anchor.textContent = u.vendor;
+            vendorCell.textContent = '';
+            vendorCell.appendChild(anchor);
+        }
+        $('slotBadge-webui').innerHTML = u.state === 'ok'      ? badge(I18n.t('webui.state.ok'), 'ok')
+                               : u.state === 'limited' ? badge(I18n.t('webui.state.limited'), 'warn')
+                               : u.state === 'tooOld'  ? badge(I18n.t('webui.state.tooOld'), 'err')
+                               :                         badge(I18n.t('webui.state.unknown'), 'warn');
+
+        set('cpuTemp', s.cpuTemperature === null ? EMPTY : s.cpuTemperature.toFixed(1) + NBSP + '°C');
+        set('tasks', String(s.tasks));
+
+        set('uptimeSession', duration(s.runtime.sessionSeconds, true));
+        set('uptimeTotal', duration(s.runtime.totalSeconds, false));
+        set('resetReason', I18n.t('reset.' + s.runtime.resetReason));
+
+        const f = s.firmware;
+        set('fwChip', f.chip + ' Rev.' + NBSP + f.revision + ', ' + I18n.plural('js.index.cores', f.cores));
+        set('fwClock', f.cpuMHz + NBSP + 'MHz');
+        set('fwSdk', f.sdk);
+        set('fwCore', f.core ? f.core.replace(/_/g, '.') : EMPTY);
+    }
+
+    const pollState = $('pollState');
+    let failing = false;
+    let loaded = false;
+
+    /* Wechsel auf die Firmware des anderen App-Platzes. Danach startet das Gerät neu; die Seite
+     * wartet, bis es wieder antwortet, und lädt sich dann neu. */
+    function waitForDevice(attempt) {
+        if (attempt >= 40) {
+            Toast.error(I18n.t('js.device_not_responding'));
+            return;
+        }
+        setTimeout(function () {
+            fetch('/api/session', { cache: 'no-store' })
+                .then(function () { window.location.reload(); })
+                .catch(function () { waitForDevice(attempt + 1); });
+        }, attempt === 0 ? 5000 : 2500);
+    }
+
+    ['app0', 'app1'].forEach(function (slot) {
+        const button = $('slotSwitch-' + slot);
+        button.addEventListener('click', async function () {
+            if (!window.confirm(I18n.t('js.index.switch_confirm', { slot: slot === 'app0' ? 'APP-1' : 'APP-2' }))) return;
+            button.disabled = true;
+            try {
+                await Api.request('/api/firmware/switch', { method: 'POST' });
+            } catch (error) {
+                if (error.unauthorized) { Api.toLogin(); return; }
+                Toast.error(I18n.t('js.index.switch_failed', { message: error.message }));
+                button.disabled = false;
+                return;
+            }
+            Toast.ok(I18n.t('js.index.restarting'));
+            waitForDevice(0);
+        });
+    });
+
+    Api.poll(function () {
+        return Api.dashboard().then(function (data) {
+            render(data);
+            if (failing || !loaded) {
+                failing = false;
+                loaded = true;
+                pollState.textContent = I18n.t('js.index.system_state');
+            }
+        }).catch(function (error) {
+            if (!error.unauthorized) {
+                failing = true;
+                pollState.textContent = I18n.t('js.connection_lost_last_values');
+            }
+            throw error;
+        });
+    });
+})();
+</script>
+</body>
+</html>

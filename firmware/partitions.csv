@@ -1,0 +1,17 @@
+# Name,   Type, SubType, Offset,   Size,     Flags
+#
+# Wie die Standardtabelle (default.csv) des Arduino-Cores, nur dass das Dateisystem in zwei
+# Teile geteilt ist:
+#   config  200 KB  nur config.json (+ .bak/.tmp). "pio run -t uploadfs" beruehrt sie nicht.
+#   spiffs  1,18 MB die Web-UI (Label "spiffs", das ist beim LittleFS der Vorgabename).
+#
+# Beide haben den Untertyp spiffs, weil die LittleFS-Bibliothek des Cores nur den kennt.
+# PlatformIO nimmt fuer buildfs/uploadfs die LETZTE Dateisystem-Partition der Tabelle -
+# deshalb steht die UI hinter der Konfiguration. Die Reihenfolge nicht vertauschen.
+nvs,      data, nvs,     0x9000,   0x5000,
+otadata,  data, ota,     0xe000,   0x2000,
+app0,     app,  ota_0,   0x10000,  0x140000,
+app1,     app,  ota_1,   0x150000, 0x140000,
+config,   data, spiffs,  0x290000, 0x32000,
+spiffs,   data, spiffs,  0x2C2000, 0x12E000,
+coredump, data, coredump,0x3F0000, 0x10000,

@@ -1,0 +1,558 @@
+<!-- settings.html — Gerätename, Zugangspasswort, Geräteinformationen und Geräteaktionen.
+     Route: GET /settings
+
+     Gelesen wird aus GET /api/config (Hostname, Firmware, Betriebszeit, ob ein Passwort
+     gesetzt ist) und GET /api/status (MAC, tatsächlich verwendeter Hostname). Geschrieben
+     wird über POST /api/config; Neustart und Zurücksetzen haben eigene Routen, weil sie
+     keine Einstellung sind, sondern eine Handlung. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- I18N_LOADER: Bei einer anderen Sprache als Deutsch das Woerterbuch vor dem Zeichnen laden
+         und den Inhalt bis zum Ersetzen der Texte verbergen. Die Liste der Sprachen steht hier
+         und in nichts sonst; eine neue Sprache braucht lang-xx.js und einen Eintrag hier. -->
+    <script>(function(){var l='de';try{l=localStorage.getItem('hyphahome-sens.lang')||(navigator.language||'de').slice(0,2).toLowerCase();}catch(e){}
+    if(['en'].indexOf(l)>=0){document.documentElement.className+=' i18n-wait';document.write('<script src="'+(location.protocol==='file:'?'':'/')+'js/lang-'+l+'.js"><\/script>');}})();</script>
+    <style>.i18n-wait body{visibility:hidden}</style>
+    <title data-t="t.hypha_home_sens_einstellungen">Hypha Home - Sens &ndash; Einstellungen</title>
+    <script>(function(){var t=null;try{t=localStorage.getItem('hyphahome-sens.theme');}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();</script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="images/logo-dunkel.svg">
+    <link rel="icon" type="image/svg+xml" href="images/logo-hell.svg" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<div class="app">
+
+    <nav class="sidebar">
+        <div class="brand">
+            <span class="brand-logo"><img class="logo-for-light" src="images/logo-dunkel.svg" alt="Hypha-Home"><img class="logo-for-dark" src="images/logo-hell.svg" alt=""></span>
+            <div>
+                <div class="brand-title">Hypha Home - Sens</div>
+                <div class="brand-sub">by EideardVMR</div>
+            </div>
+        </div>
+        <ul class="nav">
+            <li><a href="./"><span data-t="nav.home">Startseite</span></a></li>
+            <li><a href="./connections"><span data-t="nav.connections">Verbindungen</span></a></li>
+            <li><a href="./sensors"><span data-t="nav.sensors">Sensoren</span></a></li>
+            <li><a href="./control"><span data-t="nav.control">Steuerung</span></a></li>
+            <li><a href="./settings" class="active"><span data-t="nav.settings">Einstellungen</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a data-t="nav.logout" href="./logout">Abmelden</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="page-head">
+            <div>
+                <h1 data-t="nav.settings">Einstellungen</h1>
+                <p data-t="t.geraetename_zugangspasswort_und_geraeteaktionen" class="sub">Ger&auml;tename, Zugangspasswort und Ger&auml;teaktionen</p>
+            </div>
+            <button type="button" class="theme-toggle" id="themeToggle" data-t-attr="title:t.design_umschalten;aria-label:t.design_umschalten" title="Design umschalten" aria-label="Design umschalten"></button>
+        </div>
+
+        <div class="panel" id="system">
+            <div class="panel-head"><h2 data-t="t.geraetename">Ger&auml;tename</h2></div>
+
+            <form id="hostnameForm">
+                <label data-t="t.hostname" for="hostname">Hostname</label>
+                <input type="text" id="hostname" name="hostname" maxlength="63"
+                       autocapitalize="none" autocomplete="off" spellcheck="false">
+                <p data-t="t.buchstaben_ziffern_und_bindestrich_hoechstens_63" class="sub" id="hostnameHint">Buchstaben, Ziffern und Bindestrich, h&ouml;chstens
+                    63 Zeichen. Leer lassen f&uuml;r den automatischen Namen. Ein neuer Name gilt
+                    nach dem n&auml;chsten Neustart.</p>
+
+                <button data-t="t.hostname_speichern" class="btn" type="submit" id="saveHostname" disabled>Hostname speichern</button>
+            </form>
+        </div>
+
+        <div class="panel" id="security">
+            <div class="panel-head">
+                <h2 data-t="t.passwortschutz">Passwortschutz</h2>
+                <span id="passwordState"></span>
+            </div>
+
+            <form id="passwordForm">
+                <label data-t="t.neues_geraetepasswort" for="newPassword">Neues Ger&auml;tepasswort</label>
+                <input type="password" id="newPassword" name="newPassword" autocomplete="new-password">
+
+                <label data-t="t.passwort_bestaetigen" for="confirmPassword">Passwort best&auml;tigen</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password">
+
+                <p class="sub" id="passwordHint"></p>
+
+                <button data-t="t.passwort_speichern" class="btn" type="submit" id="savePassword" disabled>Passwort speichern</button>
+                <button data-t="t.passwortschutz_aufheben" class="btn-ghost" type="button" id="removePassword" hidden style="margin-top:8px">Passwortschutz aufheben</button>
+            </form>
+        </div>
+
+        <div class="panel" id="fire">
+            <div class="panel-head">
+                <h2 data-t="t.brandfrueherkennung">Brandfr&uuml;herkennung</h2>
+                <span id="fireState"></span>
+            </div>
+
+            <p data-t="t.die_brandfrueherkennung_beobachtet_den_anstieg_von" class="sub">Die Brandfr&uuml;herkennung beobachtet den Anstieg von TVOC (ENS160), CO2 (SCD40) und
+            Temperatur (SHT41) und meldet Anzeichen f&uuml;r einen Brand. Sie ersetzt <strong>keinen
+            zertifizierten Rauchmelder</strong>. Fehlende oder abgeschaltete Sensoren z&auml;hlen nicht.</p>
+
+            <form id="fireForm">
+                <label class="check"><input type="checkbox" id="fireBox" disabled> <span data-t="t.brandfrueherkennung_eingeschaltet">Brandfr&uuml;herkennung eingeschaltet</span></label>
+                <p data-t="t.dazu_muss_mindestens_einer_der_sensoren" class="sub" id="fireHint" hidden>Dazu muss mindestens einer der Sensoren ENS160, SCD40 oder SHT41 vorhanden und eingeschaltet sein.</p>
+                <button data-t="common.save" class="btn" type="submit" id="fireSave" disabled>Speichern</button>
+            </form>
+
+            <div class="tile-rows">
+                <div class="row">
+                    <span data-t="t.tvoc_anstieg" class="row-title">TVOC-Anstieg</span>
+                    <span class="row-content" id="fireTvoc"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.co2_anstieg" class="row-title">CO2-Anstieg</span>
+                    <span class="row-content" id="fireCo2"></span>
+                </div>
+                <div class="row">
+                    <span data-t="t.temperaturanstieg" class="row-title">Temperaturanstieg</span>
+                    <span class="row-content" id="fireTemperature"></span>
+                </div>
+            </div>
+
+            <button data-t="t.alarm_testen" class="btn-ghost" type="button" id="fireTest" disabled style="margin-top:12px">Alarm testen</button>
+        </div>
+
+        <div class="panel" id="update">
+            <div class="panel-head"><h2 data-t="t.update">Update</h2></div>
+
+            <p data-t="t.beide_dateien_sind_optional_es_genuegt" class="sub">Beide Dateien sind optional, es genügt auch eine. Zuerst wird die Web-UI
+                eingespielt, dann die Firmware; danach startet das Ger&auml;t neu.</p>
+
+            <label data-t="t.firmware_firmware_bin" for="updateFirmware">Firmware (firmware.bin)</label>
+            <input type="file" id="updateFirmware" accept=".bin">
+
+            <label data-t="t.web_ui_littlefs_bin" for="updateUi">Web-UI (littlefs.bin)</label>
+            <input type="file" id="updateUi" accept=".bin">
+
+            <div class="meter" id="updateMeter" hidden style="margin-top:12px"><i></i></div>
+            <p class="sub" id="updateMessage" hidden></p>
+
+            <button data-t="t.update_starten" class="btn" type="button" id="startUpdate" style="margin-top:12px">Update starten</button>
+        </div>
+
+        <div class="panel" id="device">
+            <div class="panel-head"><h2 data-t="t.geraet">Ger&auml;t</h2></div>
+
+            <div class="tile-rows">
+                <div class="row">
+                    <span data-t="t.firmware" class="row-title">Firmware</span>
+                    <span class="row-content" id="infoVersion">&ndash;</span>
+                </div>
+                <div class="row">
+                    <span data-t="t.hostname_aktiv" class="row-title">Hostname (aktiv)</span>
+                    <span class="row-content" id="infoHostname">&ndash;</span>
+                </div>
+                <div class="row">
+                    <span data-t="t.mac_adresse" class="row-title">MAC-Adresse</span>
+                    <span class="row-content" id="infoMac">&ndash;</span>
+                </div>
+                <div class="row">
+                    <span data-t="t.seit_dem_start" class="row-title">Seit dem Start</span>
+                    <span class="row-content" id="infoSession">&ndash;</span>
+                </div>
+                <div class="row">
+                    <span data-t="t.betriebszeit_gesamt" class="row-title">Betriebszeit gesamt</span>
+                    <span class="row-content" id="infoTotal">&ndash;</span>
+                </div>
+            </div>
+
+            <p class="sub" id="deviceMessage" hidden></p>
+
+            <button data-t="t.neu_starten" class="btn btn-red" type="button" id="restart">Neu starten</button>
+            <button data-t="t.auf_werkseinstellungen_zuruecksetzen" class="btn btn-red" type="button" id="factoryReset">Auf Werkseinstellungen zur&uuml;cksetzen</button>
+        </div>
+
+    </main>
+</div>
+
+<script src="js/lang-de.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    const EMPTY = SensorView.EMPTY;
+
+    /* Wie im Gerät geprüft (hostnameValid in webinterface.cpp): ein DNS-Name aus Buchstaben,
+     * Ziffern und Bindestrichen, nicht an den Rändern. Leer ist erlaubt und heißt "automatisch". */
+    const HOSTNAME_PATTERN = /^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
+
+    /* Nach einem Neustart so lange warten, bis das Gerät den Chip heruntergefahren hat, bevor
+     * die erste Nachfrage kommt — sonst antwortet noch der alte Stand. */
+    const RESTART_FIRST_CHECK_MS = 5000;
+    const RESTART_CHECK_MS       = 2500;
+    const RESTART_MAX_CHECKS     = 40;
+
+    const hostnameForm = document.getElementById('hostnameForm');
+    const hostnameInput = document.getElementById('hostname');
+    const passwordForm = document.getElementById('passwordForm');
+    const newPassword  = document.getElementById('newPassword');
+    const confirmPassword = document.getElementById('confirmPassword');
+    const removePassword = document.getElementById('removePassword');
+    const deviceMessage = document.getElementById('deviceMessage');
+    const restartButton = document.getElementById('restart');
+    const resetButton   = document.getElementById('factoryReset');
+
+    /* Betriebszeit als "3 Tage, 4 Std. 12 Min." — gleiche Darstellung wie auf der Startseite. */
+    function formatDuration(seconds) {
+        const days    = Math.floor(seconds / 86400);
+        const hours   = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+
+        const parts = [];
+        if (days > 0)  parts.push(I18n.plural('js.duration.day', days));
+        if (hours > 0) parts.push(I18n.t('js.duration.hours', { n: hours }));
+        parts.push(I18n.t('js.duration.minutes', { n: minutes }));
+        return parts.join(', ');
+    }
+
+    function setText(id, value) {
+        document.getElementById(id).textContent =
+            (value === undefined || value === null || value === '') ? EMPTY : value;
+    }
+
+    function showPasswordState(hasPassword) {
+        document.getElementById('passwordState').innerHTML = hasPassword
+            ? SensorView.badge(I18n.t('js.settings.protected'), 'ok')
+            : SensorView.badge(I18n.t('js.settings.unprotected'), 'warn');
+
+        document.getElementById('passwordHint').textContent = hasPassword
+            ? I18n.t('js.settings.password_set_hint')
+            : I18n.t('js.settings.no_password_hint');
+        removePassword.hidden = !hasPassword;
+    }
+
+    /* ---------- Speichern ---------- */
+
+    async function saveConfig(button, patch) {
+        const label = button.textContent;
+        button.disabled = true;
+        button.textContent = I18n.t('common.saving');
+        try {
+            await Api.request('/api/config', { method: 'POST', body: JSON.stringify(patch) });
+            return true;
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return false; }
+            Toast.error(I18n.t('common.save_failed', { message: error.message }));
+            return false;
+        } finally {
+            button.disabled = false;
+            button.textContent = label;
+        }
+    }
+
+    hostnameForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const hostname = hostnameInput.value.trim();
+        if (hostname !== '' && !HOSTNAME_PATTERN.test(hostname)) {
+            Toast.error(I18n.t('js.settings.hostname_invalid'));
+            return;
+        }
+
+        if (await saveConfig(document.getElementById('saveHostname'),
+                             { system: { hostname: hostname } })) {
+            Toast.ok(I18n.t('js.settings.hostname_saved'));
+        }
+    });
+
+    passwordForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        /* Passwörter werden bewusst nicht beschnitten: Leerzeichen am Rand gehören dazu. */
+        const password = newPassword.value;
+        if (password === '') {
+            Toast.error(I18n.t('js.settings.password_required'));
+            return;
+        }
+        if (password !== confirmPassword.value) {
+            Toast.error(I18n.t('js.settings.password_mismatch'));
+            return;
+        }
+
+        if (!(await saveConfig(document.getElementById('savePassword'),
+                               { system: { password: password } }))) return;
+
+        /* War vorher keines gesetzt, hat die Sitzung kein Token — und mit dem neuen Passwort
+         * wäre sie sofort ungültig. Deshalb gleich mit dem neuen Passwort anmelden, statt den
+         * Nutzer mitten im Speichern vor die Anmeldeseite zu stellen. */
+        try {
+            await Api.login(password);
+        } catch (error) {
+            /* Gespeichert ist es ja; angemeldet wird dann eben auf der Anmeldeseite. */
+        }
+
+        newPassword.value = '';
+        confirmPassword.value = '';
+        showPasswordState(true);
+        Toast.ok(I18n.t('js.settings.password_saved'));
+    });
+
+    removePassword.addEventListener('click', async function () {
+        if (!window.confirm(I18n.t('js.settings.remove_confirm'))) {
+            return;
+        }
+        if (await saveConfig(removePassword, { system: { password: '' } })) {
+            showPasswordState(false);
+            Toast.ok(I18n.t('js.settings.password_removed'));
+        }
+    });
+
+    /* ---------- Neustart und Zurücksetzen ---------- */
+
+    function lockActions() {
+        restartButton.disabled = true;
+        resetButton.disabled = true;
+    }
+
+    function showDeviceMessage(text) {
+        deviceMessage.textContent = text;
+        deviceMessage.hidden = false;
+    }
+
+    /* Wartet, bis das Gerät wieder antwortet, und lädt die Seite dann neu. Dass die Antwort
+     * 401 sein kann, ist unerheblich: Es geht nur darum, ob der Webserver wieder da ist. Das
+     * Neuladen führt dann bei Bedarf zur Anmeldung, denn die Sitzung ging beim Neustart
+     * verloren. */
+    function waitForDevice(attempt) {
+        if (attempt >= RESTART_MAX_CHECKS) {
+            showDeviceMessage(I18n.t('js.device_not_responding'));
+            return;
+        }
+        setTimeout(function () {
+            fetch('/api/session', { cache: 'no-store' })
+                .then(function () { window.location.reload(); })
+                .catch(function () { waitForDevice(attempt + 1); });
+        }, attempt === 0 ? RESTART_FIRST_CHECK_MS : RESTART_CHECK_MS);
+    }
+
+    restartButton.addEventListener('click', async function () {
+        if (!window.confirm(I18n.t('js.settings.restart_confirm'))) return;
+        lockActions();
+        try {
+            await Api.request('/api/restart', { method: 'POST' });
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            Toast.error(I18n.t('js.settings.restart_failed', { message: error.message }));
+            restartButton.disabled = false;
+            resetButton.disabled = false;
+            return;
+        }
+        showDeviceMessage(I18n.t('js.settings.restarting'));
+        waitForDevice(0);
+    });
+
+    resetButton.addEventListener('click', async function () {
+        if (!window.confirm(I18n.t('js.settings.reset_confirm1'))) return;
+        if (!window.confirm(I18n.t('js.settings.reset_confirm2'))) return;
+        lockActions();
+        try {
+            await Api.request('/api/reset', { method: 'POST' });
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            Toast.error(I18n.t('js.settings.reset_failed', { message: error.message }));
+            restartButton.disabled = false;
+            resetButton.disabled = false;
+            return;
+        }
+        /* Kein Warten auf das Gerät: Ohne WLAN-Zugang kommt es unter dieser Adresse nicht
+         * wieder. Es meldet sich als Hotspot, und mit dem muss der Nutzer sich verbinden. */
+        showDeviceMessage(I18n.t('js.settings.reset_done'));
+    });
+
+    /* ---------- Update ---------- */
+
+    const updateFirmware = document.getElementById('updateFirmware');
+    const updateUi       = document.getElementById('updateUi');
+    const updateMeter    = document.getElementById('updateMeter');
+    const updateMessage  = document.getElementById('updateMessage');
+    const startUpdate    = document.getElementById('startUpdate');
+
+    function showUpdateMessage(text) {
+        updateMessage.textContent = text;
+        updateMessage.hidden = false;
+    }
+
+    function setUpdateProgress(fraction) {
+        updateMeter.hidden = false;
+        updateMeter.firstElementChild.style.width = Math.round(fraction * 100) + '%';
+    }
+
+    /* Lädt eine Datei hoch (XHR wegen des Fortschritts). Liefert die JSON-Antwort oder wirft
+     * einen Fehler; error.unauthorized bei 401. */
+    function uploadFile(url, file, label) {
+        return new Promise(function (resolve, reject) {
+            const xhr = new XMLHttpRequest();
+            const form = new FormData();
+            form.append('file', file, file.name);
+
+            xhr.open('POST', url);
+            if (Api.token) xhr.setRequestHeader('X-Auth-Token', Api.token);
+            xhr.upload.onprogress = function (event) {
+                if (!event.lengthComputable) return;
+                setUpdateProgress(event.loaded / event.total);
+                showUpdateMessage(I18n.t('js.settings.transferring', { label: label, percent: Math.round(event.loaded / event.total * 100) }));
+            };
+            xhr.onload = function () {
+                let data = {};
+                try { data = JSON.parse(xhr.responseText); } catch (ignored) { }
+                if (xhr.status === 200 && data.ok) { resolve(data); return; }
+                if (data.detail) console.warn('Gerät meldet:', data.detail);
+                const error = new Error(data.error ? I18n.error(data.error) : I18n.t('error.HTTP', { status: xhr.status }));
+                error.unauthorized = (xhr.status === 401);
+                reject(error);
+            };
+            xhr.onerror = function () { reject(new Error(I18n.t('error.NETWORK'))); };
+            xhr.send(form);
+        });
+    }
+
+    startUpdate.addEventListener('click', async function () {
+        const firmware = updateFirmware.files[0];
+        const ui = updateUi.files[0];
+        if (!firmware && !ui) {
+            Toast.error(I18n.t('js.settings.choose_file'));
+            return;
+        }
+        const parts = [];
+        if (ui) parts.push('Web-UI');
+        if (firmware) parts.push('Firmware');
+        if (!window.confirm(I18n.t('js.settings.update_confirm', { parts: parts.join(I18n.t('js.settings.and')) }))) return;
+
+        startUpdate.disabled = true;
+        lockActions();
+        updateFirmware.disabled = true;
+        updateUi.disabled = true;
+
+        try {
+            if (ui) {
+                const result = await uploadFile('/api/update/ui', ui, 'Web-UI');
+                showUpdateMessage(I18n.t('js.settings.ui_installed', { version: result.version || '' }));
+            }
+            if (firmware) {
+                setUpdateProgress(0);
+                await uploadFile('/api/update/firmware', firmware, 'Firmware');
+                setUpdateProgress(1);
+                showUpdateMessage(I18n.t('js.settings.firmware_installed'));
+                waitForDevice(0);
+                return;
+            }
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            const failure = I18n.t('js.settings.update_failed', { message: error.message });
+            Toast.error(failure);
+            showUpdateMessage(failure);
+            startUpdate.disabled = false;
+            restartButton.disabled = false;
+            resetButton.disabled = false;
+            updateFirmware.disabled = false;
+            updateUi.disabled = false;
+            return;
+        }
+        /* Nur Web-UI: Kein Neustart nötig, die Seite mit der neuen UI neu laden. */
+        showUpdateMessage(I18n.t('js.settings.ui_reload'));
+        setTimeout(function () { window.location.reload(); }, 1500);
+    });
+
+    /* ---------- Brandfrüherkennung ---------- */
+
+    const NBSP_SPACE = '\u00a0';
+    const fireBox   = document.getElementById('fireBox');
+    const fireSave  = document.getElementById('fireSave');
+    const fireHint  = document.getElementById('fireHint');
+    const fireTest  = document.getElementById('fireTest');
+    const FIRE_UNITS = { tvoc: ['fireTvoc', 'ppb/min', 1], co2: ['fireCo2', 'ppm/min', 1], temperature: ['fireTemperature', 'K/min', 2] };
+    let fireLoaded = false;
+
+    function renderFire(fire) {
+        if (!fire) return;
+        const kinds = { disabled: 'muted', ok: 'ok', suspect: 'warn', probable: 'err' };
+        document.getElementById('fireState').innerHTML =
+            SensorView.badge(I18n.t('fire.state.' + fire.state), kinds[fire.state] || 'muted');
+
+        /* Den Schalter nur beim ersten Mal setzen: Was der Nutzer gerade ankreuzt, überschreibt die Abfrage nicht. */
+        if (!fireLoaded) {
+            fireBox.checked = !!fire.enabled;
+            fireLoaded = true;
+        }
+        /* Ohne nutzbaren Sensor gibt es kein Einschalten; Ausschalten bleibt möglich. */
+        const canSwitch = fire.connected || fire.enabled;
+        fireBox.disabled = !canSwitch;
+        fireSave.disabled = !canSwitch;
+        fireHint.hidden = !!fire.connected;
+        fireTest.disabled = !(fire.enabled && fire.connected);
+
+        Object.keys(FIRE_UNITS).forEach(function (key) {
+            const entry = FIRE_UNITS[key];
+            const channel = fire[key];
+            document.getElementById(entry[0]).textContent = (fire.enabled && channel && channel.available)
+                ? channel.rate.toFixed(entry[2]) + NBSP_SPACE + entry[1] : EMPTY;
+        });
+    }
+
+    document.getElementById('fireForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (await saveConfig(fireSave, { system: { fireDetection: fireBox.checked } })) {
+            Toast.ok(I18n.t(fireBox.checked ? 'js.settings.fire_on' : 'js.settings.fire_off'));
+        }
+    });
+
+    fireTest.addEventListener('click', async function () {
+        fireTest.disabled = true;
+        try {
+            await Api.request('/api/fire/test', { method: 'POST' });
+            Toast.ok(I18n.t('js.settings.fire_test_started'));
+        } catch (error) {
+            if (error.unauthorized) { Api.toLogin(); return; }
+            Toast.error(error.message);
+        }
+    });
+
+    Api.poll(function () {
+        return Api.sensors().then(function (data) { renderFire(data.fire); });
+    });
+
+    /* ---------- Start ---------- */
+
+    function renderInfo(config, status) {
+        const runtime = config.runtime || {};
+        setText('infoVersion', config.version);
+        setText('infoHostname', status && status.wlan && status.wlan.hostname);
+        setText('infoMac', status && status.wlan && status.wlan.mac);
+        setText('infoSession', runtime.sessionSeconds === undefined
+            ? null : formatDuration(runtime.sessionSeconds));
+        setText('infoTotal', runtime.totalSeconds === undefined
+            ? null : formatDuration(runtime.totalSeconds));
+    }
+
+    Promise.all([Api.config(), Api.request('/api/status')]).then(function (results) {
+        const config = results[0];
+        const system = config.system || {};
+
+        hostnameInput.value = system.hostname || '';
+        showPasswordState(!!system.hasPassword);
+        renderInfo(config, results[1]);
+
+        document.getElementById('saveHostname').disabled = false;
+        document.getElementById('savePassword').disabled = false;
+    }).catch(function (error) {
+        if (error.unauthorized) { Api.toLogin(); return; }
+        Toast.error(I18n.t('error.CONFIG_LOAD_FAILED'));
+    });
+})();
+</script>
+</body>
+</html>

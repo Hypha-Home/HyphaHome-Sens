@@ -1,0 +1,645 @@
+/* style.css
+   Gemeinsames Design aller Seiten. Jede .html-Seite bindet diese Datei per stylesheet-Link ein
+   (relativer Pfad css/style.css). Beim Bauen des Dateisystems setzt scripts/build_frontend.py
+   den Inhalt direkt in jede Seite ein. Alle Farben stehen als Variablen im :root-Block weiter unten.
+*/
+
+/* ===== Farbvariablen ===== *
+   ALLE Farbwerte dieser Datei stehen hier. Weiter unten im CSS kommt kein Farbcode mehr vor,
+   nur noch var(--...). Eine Farbe ändern = hier die Variable ändern.
+
+   Das Farbschema stammt aus dem Logo (images/logo-dunkel.svg bzw. logo-hell.svg):
+     Waldgrün  #1e3b30  Linien des Logos, Text im hellen Design
+     Pilzgrün  #3d8a6e  Verästelungen, hier etwas abgedunkelt für Links (#2f7a5d)
+     Bernstein #e48a14  leuchtendes Giebelfenster, Buttons und aktiver Menüpunkt
+   Standard ist das helle Design mit dem dunklen Logo. Steht auf <html> data-theme="dark",
+   überschreibt der Block darunter alle Variablen mit den Farben von logo-hell.svg
+   (#3b9272 / #4fa886 / #f2a541). Das Attribut setzt ein kleines Skript im <head> jeder Seite:
+   gespeicherte Wahl (localStorage "hyphahome-sens.theme"), sonst die Einstellung des Browsers.
+   Umgeschaltet wird mit dem Knopf #themeToggle auf der Startseite. */
+:root {
+    /* --- Grundfarben --- */
+    --primary-color: #2f7a5d;
+    --primary-color-hover: #1e3b30;
+    --background-color: #f4f1ea;
+    --font-color: #1e3b30;
+    --header-color: #1e3b30;
+    --header-sub-color: #587468;
+    --sub-font-color: #5d7a6e;       /* .sub: Untertitel */
+    --text-muted-color: #3f5a4e;     /* Anleitungslisten (ol) */
+
+    /* --- Statusfarben (Text/Rahmen) --- */
+    --ok-color: #1c7c43;
+    --err-color: #c62828;
+    --warn-color: #b26a00;
+    --info-color: #1f4fb0;
+
+    /* --- Navigation / Sidebar --- */
+    --nav-background: #ebe7dc;
+    --nav-separator-color: #d9d4c4;
+    --nav-element-font-color: #4d6a5d;
+    --nav-element-font-color-hover: #1e3b30;
+    --nav-element-background-color-hover: #e48a14;   /* Balken links beim aktiven Punkt */
+    --nav-element-border-color-hover: #f6dfb8;       /* Hintergrund des aktiven Punkts */
+    --nav-active-font-color: #1e3b30;
+    --tab-bar-border-color: #d9d4c4; /* Rand der Tab-Leiste auf schmalen Bildschirmen */
+
+    /* --- Kacheln, Panels, Karten --- */
+    --tile-background-color: #fbfaf6;
+    --tile-border-color: #ddd8c8;
+    --tile-value-color: #1e3b30;     /* Werte in den Kachelzeilen */
+    --panel-background-color: #fbfaf6;  /* .panel und .card */
+    --panel-border-color: #ddd8c8;
+
+    /* --- Füllstandsbalken --- */
+    --meter-background-color: #ddd8c8;
+
+    /* --- Badges --- */
+    --badge-ok-background: rgba(28,124,67,0.14);
+    --badge-err-background: rgba(198,40,40,0.12);
+    --badge-warn-background: rgba(178,106,0,0.14);
+    --badge-muted-background: rgba(30,59,48,0.08);
+    --badge-muted-color: #587468;
+
+    /* --- Buttons --- */
+    --btn-background-color: #e48a14;
+    --btn-background-color-hover: #f2a541;
+    --btn-font-color: #1e3b30;
+    --btn-red-background-color: rgba(198,40,40,0.10);
+    --btn-red-background-hover: rgba(198,40,40,0.22);
+    --btn-red-font-color: #8e1b1b;
+    --btn-red-border-color: rgba(198,40,40,0.40);
+    --btn-red-border-color-hover: rgba(198,40,40,0.70);
+
+    /* --- Formularfelder --- */
+    --input-background-color: #fff;
+    --input-border-color: #c9c3b0;
+    --input-font-color: #1e3b30;
+
+    /* --- Meldungskästen (.msgbox) --- */
+    --msgbox-err-background: #fdecec;
+    --msgbox-ok-background: #e8f5ec;
+    --msgbox-info-background: #e8eefc;
+    --msgbox-warn-background: #fdf3dc;
+
+    /* --- Toast --- */
+    --toast-ok-background: #e8f5ec;
+    --toast-ok-color: #14602f;
+    --toast-err-background: #fdecec;
+    --toast-err-color: #9b1c1c;
+    --toast-warn-background: #fdf3dc;
+    --toast-warn-color: #8a5200;
+}
+
+:root[data-theme="dark"] {
+    --primary-color: #4fa886;
+    --primary-color-hover: #7cc8a8;
+    --background-color: #0b0c0c;
+    --font-color: #e9ecea;
+    --header-color: #e9ecea;
+    --header-sub-color: #9aa5a0;
+    --sub-font-color: #7c8883;
+    --text-muted-color: #b8c0bc;
+
+    --ok-color: #22c55e;
+    --err-color: #ef4444;
+    --warn-color: #f59e0b;
+    --info-color: #5b8def;
+
+    --nav-background: #111312;
+    --nav-separator-color: #1d2321;
+    --nav-element-font-color: #9aa5a0;
+    --nav-element-font-color-hover: #e9ecea;
+    --nav-element-background-color-hover: #f2a541;
+    --nav-element-border-color-hover: #1f3328;
+    --nav-active-font-color: #fff;
+    --tab-bar-border-color: #1d2321;
+
+    --tile-background-color: #14201b;
+    --tile-border-color: #24362e;
+    --tile-value-color: #e9ecea;
+    --panel-background-color: #14201b;
+    --panel-border-color: #24362e;
+
+    --meter-background-color: #24362e;
+
+    --badge-ok-background: rgba(34,197,94,0.15);
+    --badge-err-background: rgba(239,68,68,0.15);
+    --badge-warn-background: rgba(245,158,11,0.15);
+    --badge-muted-background: rgba(255,255,255,0.08);
+    --badge-muted-color: #9aa5a0;
+
+    --btn-background-color: #f2a541;
+    --btn-background-color-hover: #f7b963;
+    --btn-font-color: #10201a;
+    --btn-red-background-color: rgba(239,68,68,0.15);
+    --btn-red-background-hover: rgba(239,68,68,0.514);
+    --btn-red-font-color: #fff;
+    --btn-red-border-color: rgba(239,68,68,0.514);
+    --btn-red-border-color-hover: rgba(239,68,68,0.753);
+
+    --input-background-color: #0e1512;
+    --input-border-color: #2a3d34;
+    --input-font-color: #e9ecea;
+
+    --msgbox-err-background: #1a0000;
+    --msgbox-ok-background: #001a00;
+    --msgbox-info-background: #091633;
+    --msgbox-warn-background: #1a1400;
+
+    --toast-ok-background: #0d2a17;
+    --toast-ok-color: #4ade80;
+    --toast-err-background: #2a0d0d;
+    --toast-err-color: #f87171;
+    --toast-warn-background: #2a210d;
+    --toast-warn-color: #fbbf24;
+}
+
+/* ===== Design-Umschalter (Startseite) ===== */
+.theme-toggle { background: transparent; border: 1px solid var(--tile-border-color); border-radius: 8px; color: var(--font-color); font-size: 18px; line-height: 1; padding: 8px 12px; cursor: pointer }
+.page-head-actions { display: flex; align-items: center; gap: 12px }
+.theme-toggle:hover { border-color: var(--primary-color); color: var(--primary-color) }
+
+/* ===== Basis ===== */
+* { box-sizing: border-box; margin: 0; padding: 0 }
+
+html, body {
+    /* Verhindert horizontales Scrollen der ganzen Seite, falls ein einzelnes Element (lange
+       MAC-/Broker-Adresse, Tabelle) mal breiter wird als der Bildschirm - siehe .table-scroll. */
+    overflow-x: hidden;
+}
+
+body {
+    font-family: -apple-system, sans-serif;
+    background: var(--background-color);
+    color: var(--font-color);
+    min-height: 100vh;
+}
+
+/* ===== Links ===== */
+a { 
+    color: var(--primary-color);
+    text-decoration: none;
+}
+a.hover { color: var(--primary-color-hover); }
+a:visited { color: var(--primary-color); }
+
+/* ===== Sidebar ===== *
+   Die Sidebar ist links fixiert, der Inhalt rechts scrollt. Auf schmalen Bildschirmen wird die
+   Sidebar unten als Tab-Leiste angezeigt (siehe Media Query ganz unten). */
+
+.sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--nav-background);
+    border-right: 1px solid var(--nav-separator-color);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+}
+
+.brand { display: flex; align-items: center; gap: 12px; padding: 0 20px 20px; border-bottom: 1px solid var(--nav-separator-color); margin-bottom: 12px }
+.brand > div { min-width: 0 }
+.brand-logo { display: block; width: 44px; height: 44px; flex: none }
+.brand-logo > *, .auth-logo > * { display: block; width: 100%; height: 100% }
+/* Beide Logos stehen im HTML, sichtbar ist je nach Design nur eines. */
+.logo-for-dark { display: none !important }
+.logo-for-dark.w200, .logo-for-light.w200 { max-width: 200px; max-height: 200px;  }
+:root[data-theme="dark"] .logo-for-light { display: none !important }
+:root[data-theme="dark"] .logo-for-dark { display: block !important }
+.auth-logo { display: block; width: 72px; height: 72px; margin: 0 auto 12px }
+.brand-title { font-size: 14px; font-weight: 500; overflow-wrap: anywhere }
+.brand-sub { font-size: 11px; color: var(--header-sub-color); margin-top: 2px; word-break: break-all }
+
+.nav { list-style: none; flex: 1 }
+.nav a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    font-size: 14px;
+    color: var(--nav-element-font-color);
+    text-decoration: none;
+    border-left: 8px solid transparent;
+}
+.nav a:hover { color: var(--nav-element-font-color-hover) }
+.nav a.active { color: var(--nav-active-font-color); background: var(--nav-element-border-color-hover); border-left-color: var(--nav-element-background-color-hover) }
+
+.sidebar-footer { padding: 12px 20px 0; border-top: 1px solid var(--nav-separator-color) }
+.sidebar-footer a { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--nav-element-font-color); text-decoration: none }
+.sidebar-footer a:hover { color: var(--nav-element-font-color-hover) }
+.sidebar-footer .lang-select { width: 100%; margin: 0 0 10px; padding: 6px 8px; font-size: 13px }
+
+/**===== Inhaltsbereich ===== *
+   Der Inhalt rechts von der Sidebar scrollt, die Sidebar bleibt fixiert. Auf schmalen Bildschirmen
+   wird die Sidebar unten als Tab-Leiste angezeigt (siehe Media Query ganz unten). */
+.content { flex: 1; min-width: 0; padding: 32px; max-width: 100% }
+
+.page-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 28px }
+.page-head h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px }
+.page-head .sub { margin-bottom: 0 }
+
+/**===== Kacheln (Dashboard der Startseite) ===== *
+   Auf der Startseite werden die wichtigsten Infos in Kacheln angezeigt. Jede Kachel ist ein Link
+   zu einer Detailseite. */
+.tiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+a.tile, div.tile { 
+    background: var(--tile-background-color);
+    border: 1px solid var(--tile-border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0; 
+}
+
+.tile-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px }
+.tile-head h2 { font-size: 14px; font-weight: 500; flex: 1; min-width: 0 }
+
+/* Auch svg: Nach dem Einbetten steht dort kein <img> mehr, sondern das Element selbst.
+   Ohne das rendert shelly.svg mit seinen eigenen 512 px. */
+.tile-image > img,
+.tile-image > svg { max-width: 128px; max-height: 128px; width: 100%; height: auto }
+.tile-name { font-size: 16px; text-align: center; font-weight: 500; color: var(--primary-color); margin-bottom: 8px }
+
+.tile-rows { display: flex; flex-direction: column }
+.tile-rows > .row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+    font-size: 13px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--nav-separator-color);
+}
+.tile-rows > .row:last-child { border-bottom: none }
+.tile-rows > .row > .row-title { color: var(--header-sub-color); }
+.tile-rows > .row > .row-content {
+    color: var(--tile-value-color);
+    font-weight: 500;
+    text-align: right;
+    overflow-wrap: anywhere; /* lange IP-/MAC-/Broker-Werte brechen um statt zu überlaufen */
+}
+
+/* ===== Fuellstandsbalken (Startseite: Speicher, Firmware, Dateisystem) ===== */
+.meter { flex: 0 0 100%; height: 6px; border-radius: 3px; background: var(--meter-background-color); overflow: hidden }
+.meter > i { display: block; height: 100%; width: 0; background: var(--primary-color); transition: width .3s }
+.meter.warn > i { background: var(--warn-color) }
+.meter.err > i { background: var(--err-color) }
+
+/* ===== Karten im Inhaltsbereich (Verbindungen, Sensoren, Einstellungen) ===== */
+.panel {
+    background: var(--panel-background-color);
+    border: 1px solid var(--panel-border-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    min-width: 0;
+    max-width: 800px;
+}
+.panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px }
+.panel-head h2 { font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere }
+.panel .sub { margin-bottom: 16px }
+
+.panel .tile-rows { margin-bottom: 4px }
+.panel form label:first-of-type { margin-top: 4px }
+
+/* ===== Badges (kompakte Status-Pillen) ===== */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+.badge.ok    { background: var(--badge-ok-background);    color: var(--ok-color) }
+.badge.err   { background: var(--badge-err-background);   color: var(--err-color) }
+.badge.warn  { background: var(--badge-warn-background);  color: var(--warn-color) }
+.badge.muted { background: var(--badge-muted-background); color: var(--badge-muted-color) }
+
+/* ===== Buttons ===== *
+   Buttons sind auf allen Seiten gleich gestaltet. Auf schmalen Bildschirmen werden sie immer
+   block-level (100% Breite), auf breiten Bildschirmen können sie nebeneinander stehen. */
+.btn {
+    width: 100%;
+    background: var(--btn-background-color);
+    color: var(--btn-font-color);
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 20px;
+    display: block;
+}
+.btn:hover { background: var(--btn-background-color-hover) }
+
+.btn-red { background: var(--btn-red-background-color); color: var(--btn-red-font-color); border: 1px solid var(--btn-red-border-color); margin-top: 8px }
+.btn-red:hover { background: var(--btn-red-background-hover); border-color: var(--btn-red-border-color-hover) }
+
+/* ===== Auth-Seiten: Login, Passwort-Reset, Neustart ===== *
+   Zentrierte Einzelkarte, kein Menü (der Nutzer ist hier noch nicht angemeldet bzw. die Seite
+   ist nur ein kurzer Zwischenschritt). Wird per body-Klasse "auth" aktiviert. */
+body.auth {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.card {
+    background: var(--panel-background-color);
+    border: 1px solid var(--panel-border-color);
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+}
+
+/* Kopf der Anmeldeseite: Titel und Hostname, beides zentriert */
+.auth-title { text-align: center }
+.auth-host { text-align: center; font-size: 14px; color: var(--header-sub-color); margin-bottom: 20px; overflow-wrap: anywhere }
+.auth-host[hidden] { display: none }
+
+h1 { font-size: 18px; font-weight: 500; margin-bottom: 4px }
+.sub { color: var(--sub-font-color); font-size: 13px; margin-bottom: 24px }
+
+label { display: block; font-size: 12px; color: var(--header-sub-color); margin-bottom: 6px; margin-top: 14px }
+
+input[type=text],
+input[type=password],
+input[type=number],
+select {
+    width: 100%;
+    background: var(--input-background-color);
+    border: 1px solid var(--input-border-color);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--input-font-color);
+    /* 16px ist wichtig: iOS Safari zoomt sonst beim Antippen eines Feldes automatisch hinein. */
+    font-size: 16px;
+    outline: none;
+}
+input:focus, select:focus { border-color: var(--primary-color) }
+select option { background: var(--input-background-color) }
+
+
+div.msgbox.err { background: var(--msgbox-err-background); border: 1px solid var(--err-color); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--err-color); margin-bottom: 16px }
+div.msgbox.ok  { background: var(--msgbox-ok-background); border: 1px solid var(--ok-color); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--ok-color); margin-bottom: 16px }
+div.msgbox.info  { background: var(--msgbox-info-background); border: 1px solid var(--info-color); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--info-color); margin-bottom: 16px }
+div.msgbox.warn  { background: var(--msgbox-warn-background); border: 1px solid var(--warn-color); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--warn-color); margin-top: 16px }
+
+/* Meldungskaesten: <div class="msgbox ok|err|info|warn">. Die Klasse msgbox ist noetig, weil
+   ok, err, warn und info zugleich Zusaetze anderer Bauteile sind (.badge.ok, .meter.warn,
+   .toast.err). Haengte die Kastenregel nur an "div.warn", bekaeme jedes div mit dieser Klasse
+   — etwa der Balken .meter.warn auf der Startseite — Rahmen, Innenabstand und Aussenabstand
+   eines Kastens. Jede weitere Meldungsklasse hier bitte ebenfalls unter .msgbox anlegen. */
+
+ol { padding-left: 18px; font-size: 13px; color: var(--text-muted-color); line-height: 1.7 }
+ol li { margin-bottom: 6px }
+
+/* ===== App-Shell: Startseite, Verbindungen, Sensoren, Einstellungen ===== *
+   Sidebar links, Inhalt rechts. Auf schmalen Bildschirmen wird aus der Sidebar eine
+   Tab-Leiste am unteren Rand (siehe Media Query ganz unten). */
+.app { display: flex; min-height: 100vh }
+
+/* ===== Responsive: Sidebar wird zur Tab-Leiste am unteren Rand ===== */
+@media (max-width: 720px) {
+    .app { flex-direction: column }
+
+    .sidebar {
+        width: 100%;
+        flex-direction: row;
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        border-right: none;
+        border-top: 1px solid var(--tab-bar-border-color);
+        padding: 0;
+        z-index: 10;
+    }
+    .brand, .sidebar-footer { display: none }
+    .nav { display: flex; width: 100%; flex: none }
+    .nav li { flex: 1 }
+    .nav a {
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 4px;
+        font-size: 10px;
+        text-align: center;
+        border-left: none;
+        border-top: 3px solid transparent;
+    }
+    .nav a.active { border-left-color: transparent; border-top-color: var(--primary-color) }
+
+    /* 88px unten = Platz für die fixe Tab-Leiste, damit der letzte Inhalt nicht darunter verschwindet */
+    .content { padding: 16px 16px 88px }
+    .page-head { flex-direction: column; gap: 4px }
+}
+
+/* ===== Sehr schmale Bildschirme (kleine Handys im Hochformat) ===== */
+@media (max-width: 380px) {
+    .content { padding-left: 12px; padding-right: 12px }
+    .tile, .panel { padding: 14px }
+}
+
+/* ===== Textlinks unter den Formularen ===== *
+   Wird in login.html und den Passwort-Reset-Seiten benutzt. Die Klasse fehlte im Entwurf,
+   die Links standen deshalb im Browser-Standardblau. */
+.link {
+    display: inline-block;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--header-sub-color);
+    text-decoration: none;
+}
+.link:hover { color: var(--primary-color) }
+
+/* Meldungsfelder der Auth-Seiten sind zunaechst unsichtbar; das JavaScript blendet sie bei
+   Bedarf ein. Ohne JavaScript bleiben sie weg, statt eine Fehlermeldung zu zeigen, die gar
+   nicht zutrifft. */
+div.msgbox[hidden] { display: none }
+
+/* ===== Toast: kurze Meldung oben mittig ===== *
+   Fliegt nach unten ein, bleibt mit Abstand zum oberen Rand stehen und fliegt wieder hinaus.
+   Angelegt und gesteuert wird sie von js/ui.js, im HTML steht dafuer nichts.
+
+   position: fixed, damit sie auch auf einer gescrollten Seite oben sichtbar bleibt.
+   pointer-events: none, damit sie keinen Klick abfaengt, der sie gerade ueberdeckt. */
+.toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    z-index: 1000;
+    max-width: calc(100% - 32px);
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: 1px solid;
+    font-size: 14px;
+    text-align: center;
+    pointer-events: none;
+
+    /* Startzustand: oberhalb des Bildrands und unsichtbar. translateX(-50%) haelt die Meldung
+       mittig, der Y-Anteil erledigt die Bewegung. */
+    transform: translate(-50%, -150%);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease;
+}
+
+.toast-visible { transform: translate(-50%, 0); opacity: 1 }
+
+.toast.ok   { background: var(--toast-ok-background);   border-color: var(--ok-color);   color: var(--toast-ok-color) }
+.toast.err  { background: var(--toast-err-background);  border-color: var(--err-color);  color: var(--toast-err-color) }
+.toast.warn { background: var(--toast-warn-background); border-color: var(--warn-color); color: var(--toast-warn-color) }
+
+/* Wer im Betriebssystem bewegte Darstellung abgeschaltet hat, bekommt die Meldung ohne Flug
+   eingeblendet. Die Information bleibt, nur die Bewegung entfaellt. */
+@media (prefers-reduced-motion: reduce) {
+    .toast { transition: opacity 0.2s ease; transform: translate(-50%, 0) }
+}
+
+/* ===== Eingabegitter fuer Wertetabellen ===== *
+   Gemeinsame Grundlage fuer die Gate-Empfindlichkeiten des LD2410 und die Kalibrierpunkte des
+   SHT41. Als Grid und nicht als .tile-rows, weil die Zahlenfelder in allen Zeilen gleich breit
+   untereinander stehen muessen — mit space-between wandern sie je nach Laenge der
+   Beschriftung hin und her.
+
+   Die Kopfzeile ist Teil desselben Grids, damit die Beschriftungen genau ueber den Feldern
+   sitzen. Die Spaltenaufteilung legt die jeweilige Seite fest (siehe unten). */
+.field-grid {
+    display: grid;
+    gap: 8px 12px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.field-grid .grid-head {
+    font-size: 12px;
+    color: var(--header-sub-color);
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--tile-border-color);
+}
+.field-grid .grid-head:not(:first-child) { text-align: center }
+
+.field-grid .grid-label { font-size: 13px; min-width: 0; overflow-wrap: anywhere }
+.field-grid .grid-label small { color: var(--header-sub-color) }
+
+/* Die Zahlenfelder brauchen eine engere Darstellung als die Formularfelder der uebrigen
+   Seiten. 16px Schriftgroesse bleibt, sonst zoomt iOS Safari beim Antippen hinein. */
+.field-grid input[type=number] {
+    width: 100%;
+    padding: 8px 6px;
+    text-align: center;
+    font-size: 16px;
+    -moz-appearance: textfield;
+}
+.field-grid input[type=number]::-webkit-outer-spin-button,
+.field-grid input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0 }
+
+/* Ein Feld, dessen Wert ausserhalb des gueltigen Bereichs liegt. Wird von der Seite gesetzt. */
+.field-grid input.invalid { border-color: var(--err-color) }
+
+/* Kleiner Knopf zum Entfernen einer Zeile oder eines Eintrags.
+
+   Bewusst NICHT an .field-grid gebunden: Der Knopf wird auch ausserhalb eines
+   Eingabegitters gebraucht, etwa in der Kopfzeile eines Shelly-Eintrags. Eingegrenzt
+   sah er dort aus wie ein unformatierter Browser-Knopf. */
+.grid-remove {
+    background: transparent;
+    border: 1px solid var(--tile-border-color);
+    border-radius: 8px;
+    color: var(--header-sub-color);
+    font-size: 18px;
+    line-height: 1;
+    padding: 7px 0;
+    width: 100%;
+    cursor: pointer;
+}
+.grid-remove:hover { border-color: var(--err-color); color: var(--err-color) }
+
+/* Spaltenaufteilung je Seite */
+/* Im Gitter fuellt der Knopf seine Spalte. */
+.field-grid .grid-remove { width: 100% }
+
+.gate-grid { grid-template-columns: 1fr 88px 88px }
+.cal-grid  { grid-template-columns: 1fr 1fr 44px }
+
+/* Ein unauffaelliger Knopf fuer "Zeile hinzufuegen". Nicht .btn, denn der ist der
+   Hauptknopf der Seite — das Hinzufuegen ist ein Zwischenschritt, das Speichern das Ziel. */
+.btn-ghost {
+    background: transparent;
+    border: 1px dashed var(--tile-border-color);
+    border-radius: 8px;
+    color: var(--header-sub-color);
+    font-size: 14px;
+    padding: 10px 14px;
+    width: 100%;
+    cursor: pointer;
+}
+.btn-ghost:hover:not(:disabled) { border-color: var(--primary-color); color: var(--primary-color) }
+.btn-ghost:disabled { opacity: 0.45; cursor: not-allowed }
+
+@media (max-width: 420px) {
+    .field-grid { gap: 6px 8px }
+    .gate-grid { grid-template-columns: 1fr 64px 64px }
+    .cal-grid  { grid-template-columns: 1fr 1fr 40px }
+}
+
+/* ===== Shelly-Eintraege auf der Verbindungsseite ===== *
+   Jedes Geraet ein abgesetzter Block, damit bei mehreren klar ist, welche Felder zusammen-
+   gehoeren. Ohne diese Abgrenzung stehen bei drei Geraeten zwoelf Felder untereinander und
+   man zaehlt mit, welches "Adresse" zu welchem "Name" gehoert. */
+.shelly-entry {
+    border: 1px solid var(--tile-border-color);
+    border-radius: 10px;
+    padding: 12px 14px 16px;
+    margin-bottom: 12px;
+}
+
+.shelly-entry .entry-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--primary-color);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Der Entfernen-Knopf stammt aus dem Eingabegitter und ist dort auf volle Spaltenbreite
+   gestellt. Hier soll er nur so breit sein wie noetig. */
+.shelly-entry .entry-head .grid-remove { width: 34px; flex: none }
+
+/* Das erste Label im Eintrag braucht keinen zusaetzlichen Abstand nach oben, die Ueberschrift
+   steht ja schon darueber. */
+.shelly-entry label:first-of-type { margin-top: 10px }
+
+/* Erkennung eines Shelly: Knopf, Ergebniszeile und Tabelle darunter. */
+.shelly-entry .entry-actions { margin-top: 12px }
+.shelly-entry .entry-status  { margin-top: 10px }
+.shelly-entry .tile-rows { margin-top: 10px }
+
+/* Steuerung: Ausgangszeilen (Shelly, Kanal, Entfernen) und Schaltfelder */
+.ctl-fields { border: 0; padding: 0; margin: 0; min-width: 0 }
+.ctl-fields:disabled { opacity: 0.45 }
+.ctl-fields .btn, .ctl-fields .btn-ghost { margin-top: 16px }
+.ctl-fields .btn-ghost { margin-top: 8px }
+
+label.check { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--font-color); margin-top: 18px; cursor: pointer }
+label.check input { width: 18px; height: 18px; margin: 0; accent-color: var(--primary-color) }
+
+.output-row { display: grid; grid-template-columns: 1fr 110px 44px; gap: 8px; margin-bottom: 8px }
+.output-row.stale select[data-shelly] { border-color: var(--warn-color) }
+.output-row .grid-remove { width: 100% }
+.output-row select:disabled { opacity: 0.6 }
+[data-outputs-hint] { margin: 4px 0 0 }
